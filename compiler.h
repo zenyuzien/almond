@@ -29,7 +29,7 @@ struct token
         unsigned long long_val; 
         unsigned long long ull_val ;
         void* any; 
-    };
+    };;
 
     bool space_next; 
     const char* bracket_grp ;

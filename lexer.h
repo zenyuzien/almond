@@ -87,8 +87,8 @@ struct lexer
     char next_char(bool mode = false );
     char top_char(bool mode = false );
     void push_char(char c, bool mode = false);
-    void* lexer_note();
-    std::vector<token*> *lexer_tokens();
+    //void* lexer_note();
+    //std::vector<token*> *lexer_tokens();
     token* read_next_token();
     int lex(); 
 };

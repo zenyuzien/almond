@@ -1,10 +1,14 @@
 #ifndef _almond 
 #define _almond 
 
+#include "node.h"
+
 #include <stdio.h>
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
+
+
 enum // token classes
 {
     TT_ID, // identifier
@@ -49,6 +53,7 @@ struct token
             string_val = nullptr;
         }
     }
+    void print();
 
 };
 
@@ -64,8 +69,9 @@ struct compilation
     int line_no , col_no , flags; 
     FILE *ifile, *ofile;
     const char* path; 
-    std::vector<token*>* vec_t; 
-    compilation() :
+    std::vector<token*>* vec_t;
+    std::vector<Node::node*> *vec_n, *vec_tree;
+    compilation() : 
         line_no(1), col_no(1), flags(0),
         ifile(nullptr), ofile(nullptr),
         path(nullptr)

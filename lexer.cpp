@@ -4,7 +4,37 @@
 #include <iostream>
 #include <cstring>
 
-
+void token::print()
+{
+    std::cout<<"type: "<<type<<" ";
+    switch(type)
+    {
+        case TT_Num:
+            std::cout<<"num "<<ull_val<<std::endl;
+            break;
+        case TT_Str:
+            std::cout<<"str "<<string_val<<std::endl;
+            break;
+        case TT_OP:
+            std::cout<<"op "<<string_val<<std::endl;
+            break;
+        case TT_Sym:
+            std::cout<<"sym "<<char_val<<std::endl;
+            break;
+        case TT_ID:
+            std::cout<<"id "<<string_val<<std::endl;
+            break;
+        case TT_KW:
+            std::cout<<"kw "<<string_val<<std::endl;
+            break;
+        case TT_Newl:
+            std::cout<<"new line \n";
+            break;
+        case TT_C:
+            std::cout<<"comm "<<string_val<<std::endl;
+            break;
+    }
+}
 char lexer::next_char(bool mode)
 {
     compiler->col_no++;

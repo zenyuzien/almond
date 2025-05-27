@@ -8,7 +8,7 @@ int main()
     int res = c->compile_file("test.c","test",0);
     if(res == COMPILATION_SUCCESS)
     {
-        std::cout<< "All ok ! \n" ; 
+        std::cout<< "Compiled succesfully! \n" ; 
     }
     else if( res == COMPILATION_FAILED )
     {

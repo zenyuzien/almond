@@ -8,6 +8,48 @@
 #include <cstring>
 #include <iostream>
 
+struct token* compilation::token_at(int token_ptr)
+{
+    token* tok= nullptr;
+    if(token_ptr < (vec_t[0].size()))
+        tok = vec_t[0][token_ptr];
+
+    if(!tok)
+    {
+        ifdm("tok invalid from current pointer, eof \n");
+        return nullptr; // EOF
+    }
+
+
+    ifdm("printing the token in single()___________ \n");
+    ifd vec_t[0][token_ptr]->print();
+    ifdm("___________ \n");
+
+    ifdm("printing the token in single()___________ \n");
+    ifd tok->print();
+    ifdm("___________ \n");
+
+
+    while(tok)
+    {
+        if( tok->type == TT_Newl||
+            tok->type == TT_C   ||
+          ( tok->type == TT_Sym && tok->char_val == '\\' )
+        )// check newline comment and // 
+           if(token_ptr < (vec_t[0].size()-1)){
+                tok = vec_t[0][++token_ptr]; 
+                ifdm("INC PTR++ \n");
+           }
+           else // EOF
+                return nullptr;
+        else break;
+    }
+    ifdm("after check of newl comm escape. printing the token jic \n");
+    ifd tok->print();
+    // peek next end
+    return tok;
+}
+
 void compilation::error_msg(const char* msg, ...)
 {
     va_list args;
@@ -72,13 +114,10 @@ int compilation::compile_file
     std::cout<< "Nodes summary: size: "<< vec_n[0].size()<<std::endl;
     for(auto x : vec_n[0])
     {
-        if(x->type == Node::exp_)
-        {
-            
-            std::cout<< "left: " << x->expunion.exp.left->val.integer_val 
-            << " right: " << x->expunion.exp.right->val.integer_val
-            << " op: " << x->expunion.exp.op << std::endl;
-        }
+        std::cout<<"______________\n";
+        x->display(0);
+        std::cout<<"______________\n";
+        
     }
 
 

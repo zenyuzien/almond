@@ -87,7 +87,9 @@ namespace Node
 
         // implementatios of these can be found in parser.cpp
         void push(std::vector<node*>* v);
-        
+        void display(int);
+        void node_shift_children_left();
+        void reorder_expression();
         
         // idk what this node_set_vector is trying to do
     };

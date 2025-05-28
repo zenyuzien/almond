@@ -9,6 +9,10 @@
 #include <vector>
 
 
+#define debug_parse 1
+#define ifd if(debug_parse)
+#define ifdm(msg) do { if (debug_parse) std::cout << msg << std::endl; } while (0)
+
 enum // token classes
 {
     TT_ID, // identifier
@@ -21,6 +25,7 @@ enum // token classes
     TT_Newl   // new line
 };
 
+struct compilation; 
 struct token
 {
     int type;
@@ -54,7 +59,7 @@ struct token
         }
     }
     void print();
-
+    struct token* next_token(compilation* , int);
 };
 
 // status 
@@ -67,11 +72,13 @@ enum
 struct compilation
 {
     int line_no , col_no , flags; 
+    int token_ptr; 
     FILE *ifile, *ofile;
     const char* path; 
     std::vector<token*>* vec_t;
     std::vector<Node::node*> *vec_n, *vec_tree;
     compilation() : 
+        token_ptr(0),
         line_no(1), col_no(1), flags(0),
         ifile(nullptr), ofile(nullptr),
         path(nullptr)
@@ -88,6 +95,7 @@ struct compilation
     );
     void error_msg(const char* msg, ...);
     void warn_msg(const char *msg, ...);
+    struct token* token_at(int ptr);
     //lexer* sandbox(std::string& custom);
 };
 

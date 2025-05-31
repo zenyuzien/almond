@@ -1,16 +1,14 @@
-
-
 #ifndef _parse
 #define _parse
 
 #include "compiler.h"
 #include "node.h"
-
+#include <iostream>
+#include <memory.h>
 #include <vector>
 #include <string>
-
-
-
+#include <bitset>
+#include <inttypes.h> // for PRIu16, PRIu64
 
 enum 
 {
@@ -22,11 +20,6 @@ struct record
 {
     compilation* compiler;
     int flags;
-    record(int f = 0)
-    {
-        compiler = nullptr;
-        flags = f ;
-    }
     record(compilation* c, int f =0)
     {
         compiler = c;
@@ -39,6 +32,7 @@ struct record
     int parse_exp(token* tok);
     void parse_kw(token* tok);
     void parse_var_func_struct_union();
+    void parse_kw_for_global();
     record * clone(int flags);
 };
 
@@ -68,12 +62,14 @@ namespace DT
         {
             struct node* struct_node, *union_node ;
         };
+        void print();
         void parse(compilation* c);
         bool check_flag(DT::flag f);
         void set_flag(DT::flag f);
         void unset_flag(DT::flag f);
         void parse_datatype_modifiers(compilation* c);
         void parse_datatype_type(compilation* c);
+        void parser_datatype_init(compilation* c, token* dt1,token*dt2, int stars, int expectation );
     };
     enum class type
     {
@@ -87,8 +83,16 @@ namespace DT
         union_,
         unknown_
     };
+    enum class expect
+    {
+        primitive_,
+        union_,
+        struct_
+    };
     bool is_datatype(const char* str);
     bool is_var_modifier(const char* str);
+
+    bool has_datatype_changed(struct datatype* current);
 };
 
 

@@ -9,9 +9,12 @@
 #include <vector>
 
 
-#define debug_parse 1
+extern bool debug_parse ;
+extern bool custom_parse;
 #define ifd if(debug_parse)
-#define ifdm(msg) do { if (debug_parse) std::cout << msg << std::endl; } while (0)
+#define ifc if(custom_parse)
+#define ifdm(msg) do { if (debug_parse) std::cout << msg ; } while (0)
+#define ifcm(msg) do { if (custom_parse) std::cout << msg ; } while (0)
 
 enum // token classes
 {
@@ -59,7 +62,7 @@ struct token
         }
     }
     void print();
-    struct token* next_token(compilation* , int);
+    //struct token* next_token(compilation* , int);
 };
 
 // status 
@@ -95,6 +98,7 @@ struct compilation
     );
     void error_msg(const char* msg, ...);
     void warn_msg(const char *msg, ...);
+    struct token* token_at();
     struct token* token_at(int ptr);
     //lexer* sandbox(std::string& custom);
 };

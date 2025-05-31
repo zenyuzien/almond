@@ -7,7 +7,10 @@
 #include <stdarg.h>
 #include <cstring>
 #include <iostream>
-
+struct token* compilation::token_at()
+{
+    return token_at(token_ptr);
+}
 struct token* compilation::token_at(int token_ptr)
 {
     token* tok= nullptr;
@@ -20,15 +23,8 @@ struct token* compilation::token_at(int token_ptr)
         return nullptr; // EOF
     }
 
-
-    ifdm("printing the token in single()___________ \n");
+    ifdm("printing the token in single()\n");
     ifd vec_t[0][token_ptr]->print();
-    ifdm("___________ \n");
-
-    ifdm("printing the token in single()___________ \n");
-    ifd tok->print();
-    ifdm("___________ \n");
-
 
     while(tok)
     {
@@ -44,8 +40,6 @@ struct token* compilation::token_at(int token_ptr)
                 return nullptr;
         else break;
     }
-    ifdm("after check of newl comm escape. printing the token jic \n");
-    ifd tok->print();
     // peek next end
     return tok;
 }

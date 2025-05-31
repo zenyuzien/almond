@@ -364,27 +364,34 @@ void DT::datatype::parse(compilation* compiler)
     parse_datatype_modifiers(compiler);
     ifdm("in series mod-type-mod, first mod done \n");
 
-    std::cout<<"_\n";
-    has_datatype_changed(this);
-    std::cout<<"_\n";
-
-
+    ifc 
+    {
+        std::cout<<"_\n";
+        has_datatype_changed(this);
+        std::cout<<"_\n";
+    }
     parse_datatype_type(compiler);
     ifdm("in series mod-type-mod, type done \n");
 
-    std::cout<<"_\n";
-    has_datatype_changed(this);
-    std::cout<<"_\n";
+    ifc 
+    {
+        std::cout<<"_\n";
+        has_datatype_changed(this);
+        std::cout<<"_\n";
+    }
 
     parse_datatype_modifiers(compiler);
     ifdm("in series mod-type-mod, second mod done \n");
 
 
-    std::cout<<"_\n";
-    has_datatype_changed(this);
-    std::cout<<"_\n";
+    ifc 
+    {
+        std::cout<<"_\n";
+        has_datatype_changed(this);
+        std::cout<<"_\nFinally the dt: \n";
+        print();
+    }
 
-    print();
 }
 void record::parse_var_func_struct_union()
 {
@@ -392,7 +399,7 @@ void record::parse_var_func_struct_union()
     ifcm("\tentered p_v_f_s_u \n");
     auto dt = new DT::datatype(); 
     dt->set_flag(DT::flag::IS_SIGNED);
-    has_datatype_changed(dt);
+    ifc has_datatype_changed(dt);
     dt->parse(compiler);
     // dt here ?
     //std::cout<<"pvfsu exit \n";

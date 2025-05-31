@@ -1,1 +1,1 @@
-short int* a;
+struct abc

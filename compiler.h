@@ -3,6 +3,7 @@
 
 #include "node.h"
 
+#include <string>
 #include <stdio.h>
 #include <cstdint>
 #include <cstdlib>
@@ -72,20 +73,82 @@ enum
     COMPILATION_FAILED
 };
 
+struct compilation;
+
+namespace SYM 
+{
+    enum class type 
+    {
+        node     = 0b0001,
+        native_f = 0b0010,
+        undef    = 0b0100
+    };
+    struct symbol
+    {
+        std::string name; 
+        int type; 
+        void* metadata;
+    };
+    struct symbol_resolver
+    {
+        compilation* compiler; 
+        void init();
+        void push(symbol* s);
+        void new_table();
+        void end_table();
+        symbol* get(std::string& name);
+        symbol* get_for_nf(std::string& name);
+        symbol* make_symbol(const char* name, int type, void* content);
+        Node::node* node(symbol* sym);
+
+        /*
+            building for variables, functions, structures, unions 
+            pending
+        */
+        void build_for_node(Node::node* node);
+    };
+};
+
+
+
+struct scope;
 struct compilation
 {
     int line_no , col_no , flags; 
     int token_ptr; 
+
+    int scope_ptr; 
+    scope* root_scope, *active_scope; 
+
     FILE *ifile, *ofile;
     const char* path; 
     std::vector<token*>* vec_t;
     std::vector<Node::node*> *vec_n, *vec_tree;
+
+    std::vector<SYM::symbol*>* sym_table; 
+    std::vector< std::vector<SYM::symbol*>* >* sym_table_table; 
+
+    SYM::symbol_resolver* sym_resolver; 
+    int sym_ptr;
+
     compilation() : 
+        line_no(1),
+        col_no(1),
+        flags(0),
         token_ptr(0),
-        line_no(1), col_no(1), flags(0),
-        ifile(nullptr), ofile(nullptr),
-        path(nullptr)
+        scope_ptr(0),
+        root_scope(nullptr),
+        active_scope(nullptr),
+        ifile(nullptr),
+        ofile(nullptr),
+        path(nullptr),
+        sym_table(nullptr)
+        //vec_t(new std::vector<token*>()),
+        //vec_n(new std::vector<Node::node*>()),
+        //vec_tree(new std::vector<Node::node*>()),
+        //sym_table_table(new std::vector<std::vector<symbol*>*>())
     {}
+
 
     ~compilation() {
         if (ifile) fclose(ifile);
@@ -101,6 +164,39 @@ struct compilation
     struct token* token_at();
     struct token* token_at(int ptr);
     //lexer* sandbox(std::string& custom);
+
+    scope* root_scope_create(bool create);
+    scope* new_scope(int flags);
+    void finish_scope();
+    void push_scope(void* address, size_t size);
+    void* scope_from_to(scope* s, scope* e);
+    void* scope_last_instance();
+
+};
+
+struct scope
+{
+    bool dec; // may remove;
+    int flags, ptr; 
+    std::vector<void*>* instances;
+    size_t size;  
+    scope* parent;
+    compilation* compiler;
+
+    scope()
+        : ptr(0), flags(0), size(0), parent(nullptr), compiler(nullptr)
+    {
+        instances = new std::vector<void*>();
+        dec = true; // LOOK HERE
+    }
+
+    ~scope() {
+       // delete instances;
+    }
+  
+    void iterate(bool start);
+    void* instance_at(int index);
+    void* top();
 };
 
 #endif

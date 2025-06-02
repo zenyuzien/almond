@@ -3,34 +3,34 @@
 #include <vector>
 #include <cstring>
 
-bool debug_parse = false;
-bool custom_parse = false;
+bool debugParse = false;
+bool customParse = false;
 int main(int argc, char *argv[]) {
 
-    debug_parse= false;
+    debugParse= false;
     // Check command line arguments
     for (int i = 0; i < argc ; i++) {
     
         if (strcmp(argv[i], "-dp") == 0 ) {
-            debug_parse = true;
-            //custom_parse = true;
+            debugParse = true;
+            customParse = true;
             break;
         }        
         if (strcmp(argv[i], "-cp") == 0 ) {
-            //debug_parse = true;
-            custom_parse = true;
+            debugParse = true;
+            customParse = true;
             break;
         }
 
     }
 
     auto c = new compilation(); 
-    int res = c->compile_file("test.c","test",0);
-    if(res == COMPILATION_SUCCESS)
+    int res = c->compileFile("test.c","test",0);
+    if(res == 1)
     {
         std::cout<< "Compiled succesfully! \n" ; 
     }
-    else if( res == COMPILATION_FAILED )
+    else if( res == 0 )
     {
         std::cout << "Comp failed ! \n";
     }

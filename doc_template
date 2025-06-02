@@ -1,0 +1,25 @@
+/**
+ * @brief Performs fast matrix multiplication.
+ * @details
+ * This function uses Strassen's algorithm to perform matrix multiplication
+ * in sub-cubic time. It is suitable for large square matrices where
+ * traditional O(n^3) methods are too slow. 
+ * 
+ * For small matrices, this may be slower due to recursion overhead.
+ *
+ * @param A First matrix.
+ * @param B Second matrix.
+ * @return Product matrix.
+ */
+
+ /**
+ * @file matrix_math.cpp
+ * @brief Implements core matrix operations such as multiplication and inversion.
+ * @details
+ * This file contains optimized routines for matrix manipulation, used in
+ * scientific computing modules. All functions assume well-formed square matrices
+ * unless stated otherwise.
+ *
+ * @author ZENyuzien
+ * @date 2025-06-02
+ */

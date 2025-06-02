@@ -7,15 +7,23 @@
 #include <stdarg.h>
 #include <cstring>
 #include <iostream>
-struct token* compilation::token_at()
+
+extern bool debugParse ;
+extern bool customParse;
+#define ifd if(debugParse)
+#define ifc if(customParse)
+#define ifdm(msg) do { if (debugParse) std::cout << msg ; } while (0)
+#define ifcm(msg) do { if (customParse) std::cout << msg ; } while (0)
+
+Token::token* compilation::tokenAt()
 {
-    return token_at(token_ptr);
+    return tokenAt(tokenPtr);
 }
-struct token* compilation::token_at(int token_ptr)
+struct Token::token* compilation::tokenAt(int token_ptr)
 {
-    token* tok= nullptr;
-    if(token_ptr < (vec_t[0].size()))
-        tok = vec_t[0][token_ptr];
+    Token::token* tok= nullptr;
+    if(token_ptr < (vecTokens[0].size()))
+        tok = vecTokens[0][token_ptr];
 
     if(!tok)
     {
@@ -23,17 +31,18 @@ struct token* compilation::token_at(int token_ptr)
         return nullptr; // EOF
     }
 
-    ifdm("printing the token in single()\n");
-    ifd vec_t[0][token_ptr]->print();
+    ifdm("printing the Token::token in single()\n");
+    ifd vecTokens[0][tokenPtr]->print();
 
+    
     while(tok)
     {
-        if( tok->type == TT_Newl||
-            tok->type == TT_C   ||
-          ( tok->type == TT_Sym && tok->char_val == '\\' )
+        if( tok->type == static_cast<int>(Token::type::Newl)||
+            tok->type == static_cast<int>(Token::type::C)  ||
+          ( tok->type == static_cast<int>(Token::type::Sym) && tok->charVal == '\\' )
         )// check newline comment and // 
-           if(token_ptr < (vec_t[0].size()-1)){
-                tok = vec_t[0][++token_ptr]; 
+           if(token_ptr < (vecTokens[0].size()-1)){
+                tok = vecTokens[0][++token_ptr]; 
                 ifdm("INC PTR++ \n");
            }
            else // EOF
@@ -44,24 +53,24 @@ struct token* compilation::token_at(int token_ptr)
     return tok;
 }
 
-void compilation::error_msg(const char* msg, ...)
+void compilation::genError(const char* msg, ...)
 {
     va_list args;
     va_start(args, msg);
     vfprintf(stderr, msg, args);
     va_end(args);
-    fprintf(stderr," on line %i, col %i in file %s\n", line_no, col_no, path);
+    fprintf(stderr," on line %i, col %i in file %s\n", lineNo, colNo, path);
     exit(-1);
 }
-void compilation::warn_msg(const char* msg, ...)
+void compilation::genWarning(const char* msg, ...)
 {
     va_list args;
     va_start(args, msg);
     vfprintf(stderr, msg, args);
     va_end(args);
-    fprintf(stderr," on line %i, col %i in file %s\n", line_no, col_no, path);
+    fprintf(stderr," on line %i, col %i in file %s\n", lineNo, colNo, path);
 }
-int compilation::compile_file
+int compilation::compileFile
 (
         const char* input_file, 
         const char* output_file,
@@ -73,51 +82,47 @@ int compilation::compile_file
     this->flags = flags;
 
     if(!ofile)
-        return COMPILATION_FAILED;
+        return 0;
 
     // lexical
-    auto lex_process = new lexer(this,std::string{});
+    auto lex_process = new lexer(this);
 
-
-
-    if(!lex_process)
-        return COMPILATION_FAILED;
+    if(!lex_process || (!lex_process->lex()))
+        return 0;
     
-    if(lex_process->lex() != LEXER_SUCCESS)
-        return COMPILATION_FAILED;
-    
-            std::cout<< "size: " <<(*vec_t).size() << std::endl;
-            for(auto x : (*vec_t))
+            std::cout<< "size: " <<(*vecTokens).size() << std::endl;
+            for(auto x : (*vecTokens))
                 x->print();
             
 
     std::cout<<"Lexed successfully ! \n";
     // parsing 
     
+    /*
     auto parse_process = new parser();
     parse_process->compiler = this;
-    vec_n = new std::vector<Node::node*>();
-    vec_tree = new std::vector<Node::node*>();
+    vecNodes = new std::vector<Node::node*>();
+    vecTree = new std::vector<Node::node*>();
     if(!parse_process)
-        return COMPILATION_FAILED;
-    if(parse_process->parse() != PARSE_SUCCESS)
-        return COMPILATION_FAILED;
+        return 0;
+    if(parse_process->parse() != 1)
+        return 0;
     
     std::cout<< "Parsing success \n";
 
-    std::cout<< "Nodes summary: size: "<< vec_n[0].size()<<std::endl;
-    for(auto x : vec_n[0])
+    std::cout<< "Nodes summary: size: "<< vecNodes[0].size()<<std::endl;
+    for(auto x : vecNodes[0])
     {
         std::cout<<"______________\n";
         x->display(0);
         std::cout<<"______________\n";
         
     }
-
+*/
 
     // code gen
 
-    return COMPILATION_SUCCESS;
+    return 1;
 }
 /*
 lexer* compilation::sandbox(std::string& custom)
@@ -131,48 +136,48 @@ lexer* compilation::sandbox(std::string& custom)
     return lexp;
 }*/
 
-scope* compilation::root_scope_create(bool create) // 1 create, 0 free
+scope* compilation::rootScopeCreate(bool create) // 1 create, 0 free
     {
         if(create)
         {
-            root_scope = active_scope = new scope();
-            return root_scope;
+            rootScope = activeScope = new scope();
+            return rootScope;
         }
-        //root_scope->de_alloc();
-        root_scope = active_scope = nullptr;
+        //rootScope->de_alloc();
+        rootScope = activeScope = nullptr;
         return nullptr;
     }
-    scope* compilation::new_scope(int flags)
+    scope* compilation::newScope(int flags)
     {
         auto new_scope = new scope();
         new_scope->flags = flags;
-        new_scope->parent = active_scope;
-        active_scope = new_scope;
+        new_scope->parent = activeScope;
+        activeScope = new_scope;
         return new_scope;
     }
-    void compilation::finish_scope()
+    void compilation::finishScope()
     {
-         // delete active_scope ; can't do it yet, so we do this instead :
-        active_scope = active_scope->parent;
-        if(!active_scope) root_scope = nullptr;
+         // delete activeScope ; can't do it yet, so we do this instead :
+        activeScope = activeScope->parent;
+        if(!activeScope) rootScope = nullptr;
     }
-    void compilation::push_scope(void* address, size_t size)
+    void compilation::pushScope(void* address, size_t size)
     {
-        active_scope->instances->push_back(address);
-        active_scope->size += size;
+        activeScope->instances->push_back(address);
+        activeScope->size += size;
     }
-    void* compilation::scope_from_to(scope* s, scope* e)
+    void* compilation::scopeFromTo(scope* s, scope* e)
     {
         if( s == e ) return nullptr; 
         auto last = s->top();
         if(last) return last; 
         auto parent = s->parent;
-        if(parent) return scope_from_to(parent,e);
+        if(parent) return scopeFromTo(parent,e);
         return nullptr;
     }
-    void* compilation::scope_last_instance()
+    void* compilation::scopeLastInstance()
     {
-        return scope_from_to( active_scope, nullptr );
+        return scopeFromTo( activeScope, nullptr );
     }
 
     void scope::iterate(bool start) // 0- start , 1-end // dec true means ptr decreases
@@ -183,7 +188,7 @@ scope* compilation::root_scope_create(bool create) // 1 create, 0 free
             return ;
         }
     }
-    void* scope::instance_at(int index)
+    void* scope::instanceAt(int index)
     {
         if(instances->size()==0) return nullptr; 
         return instances[0][index];
@@ -194,39 +199,39 @@ scope* compilation::root_scope_create(bool create) // 1 create, 0 free
         return instances[0][instances->size()-1];
     }
 
-        void SYM::symbol_resolver::init()
+        void SYM::symbolResolver::init()
         {
-            compiler->sym_table_table = new std::vector<std::vector<symbol*>*>();
+            compiler->symTableTable = new std::vector<std::vector<SYM::symbol*>*>();
             //new std::vector<SYM::symbol*>() ; 
         }
-        void SYM::symbol_resolver::push(symbol* s)
+        void SYM::symbolResolver::push(SYM::symbol* s)
         {
-            compiler->sym_table->push_back(s);
+            compiler->symTable->push_back(s);
         }
-        void SYM::symbol_resolver::new_table()
+        void SYM::symbolResolver::newTable()
         {
-            if(compiler->sym_table)
-                compiler->sym_table_table->push_back(compiler->sym_table);
-            compiler->sym_table = new std::vector<SYM::symbol*>();
+            if(compiler->symTable)
+                compiler->symTableTable->push_back(compiler->symTable);
+            compiler->symTable = new std::vector<SYM::symbol*>();
         }
-        void SYM::symbol_resolver::end_table()
+        void SYM::symbolResolver::endTable()
         {
-            compiler->sym_table = compiler->sym_table_table[0].back();
-            compiler->sym_table_table[0].pop_back();
+            compiler->symTable = compiler->symTableTable[0].back();
+            compiler->symTableTable[0].pop_back();
         }
-        SYM::symbol* SYM::symbol_resolver::get(std::string& name) 
+        SYM::symbol* SYM::symbolResolver::get(std::string& name) 
         {
-            compiler->sym_ptr =0 ;
-            auto s = compiler->sym_table[0][0];
+            compiler->symPtr =0 ;
+            auto s = compiler->symTable[0][0];
             while(s)
             {
                 if( s->name == name )
                     return s;
-                s = compiler->sym_table[0][++compiler->sym_ptr];
+                s = compiler->symTable[0][++compiler->symPtr];
             }
             return nullptr; 
         }
-        SYM::symbol* SYM::symbol_resolver::get_for_nf(std::string& name)
+        SYM::symbol* SYM::symbolResolver::getForNF(std::string& name)
         {
             auto s = get(name);
             if(!s)
@@ -235,10 +240,10 @@ scope* compilation::root_scope_create(bool create) // 1 create, 0 free
                 return nullptr; 
             return s;
         }
-        SYM::symbol* SYM::symbol_resolver::make_symbol(const char* name, int type, void* content)
+        SYM::symbol* SYM::symbolResolver::makeSymbol(const char* name, int type, void* content)
         {
             auto n = std::string(name);
-            if( SYM::symbol_resolver::get(n) )
+            if( SYM::symbolResolver::get(n) )
                 return nullptr;
             auto sym = new SYM::symbol();
             sym->name = n ;
@@ -246,7 +251,7 @@ scope* compilation::root_scope_create(bool create) // 1 create, 0 free
             sym->type = 0 | type;
             return nullptr; 
         }
-        Node::node* SYM::symbol_resolver::node(symbol* sym)
+        Node::node* SYM::symbolResolver::node(SYM::symbol* sym)
         {
             return (sym->type & static_cast<int>(SYM::type::node)) ? nullptr : static_cast<Node::node*>(sym->metadata);
         }

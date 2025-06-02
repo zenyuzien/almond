@@ -1,122 +1,118 @@
 
 #include "lexer.h"
+#include "token.h"
 #include <stdlib.h>
 #include <iostream>
 #include <cstring>
-
-void token::print()
+std::string Token::token::type_and_val_to_str()
 {
-    std::cout<<"type: "<<type<<" ";
     switch(type)
     {
-        case TT_Num:
-            std::cout<<"num "<<ull_val<<std::endl;
-            break;
-        case TT_Str:
-            std::cout<<"str "<<string_val<<std::endl;
-            break;
-        case TT_OP:
-            std::cout<<"op "<<string_val<<std::endl;
-            break;
-        case TT_Sym:
-            std::cout<<"sym "<<char_val<<std::endl;
-            break;
-        case TT_ID:
-            std::cout<<"id "<<string_val<<std::endl;
-            break;
-        case TT_KW:
-            std::cout<<"kw "<<string_val<<std::endl;
-            break;
-        case TT_Newl:
-            std::cout<<"new line \n";
-            break;
-        case TT_C:
-            std::cout<<"comm "<<string_val<<std::endl;
-            break;
+        case static_cast<int>(Token::type::Num):
+            return "Number "+ std::to_string(ullVal) ;
+        case static_cast<int>(Token::type::Str):
+            return "String " + std::string(stringVal) ;
+        case static_cast<int>(Token::type::OP):
+            return "Operator "+ std::string(stringVal);
+        case static_cast<int>(Token::type::Sym):
+            return "Symbol " + charVal;
+        case static_cast<int>(Token::type::ID):
+            return "Identifier "+ std::string(stringVal);
+        case static_cast<int>(Token::type::KW):
+            return "Keyword "+ std::string(stringVal);
+        case static_cast<int>(Token::type::Newl):
+            return "New Line";
+        case static_cast<int>(Token::type::C):
+            return "Comment "+ std::string(stringVal);
+        default:
+            return "Unknown";
     }
 }
-char lexer::next_char(bool mode)
+void Token::token::print()
 {
-    compiler->col_no++;
+    std::cout << type_and_val_to_str() << std::endl;
+}
+char lexer::nextCharInSourceFile()
+{
+    compiler->colNo++;
     char c = getc( compiler->ifile );
     if( expressions>0 )
-        bracket_content += c;
+        parenContent += c;
     
     if (c == '\n')
     {
-        compiler->line_no++;
-        compiler->col_no++;
+        compiler->lineNo++;
+        compiler->colNo++;
     } 
     return c; 
 }
-char lexer::top_char(bool mode ) // peeks next char
+char lexer::peekCharInSourceFile() // peeks next char
 {
     char c = getc(compiler->ifile);
     ungetc(c,compiler->ifile);
     return c;
 }
-void lexer::push_char(char c, bool mode)
+void lexer::pushCharToSourceFile(char c)
 {
     ungetc(c,compiler->ifile);
 }
 
-struct token* lexer::read_next_token()
+struct Token::token* lexer::getNextToken()
 {
-    auto tok = new token();
+    auto tok = new Token::token();
     if(expressions>0)
-        tok->bracket_grp = strdup(bracket_content.c_str()) ;
+        tok->bracketGroup = strdup(parenContent.c_str()) ;
     std::string tmp= "";
-    char c = top_char(); 
-    //std::cout << "case '"<<c<<"'\n";
-    char end_delimeter; 
+    char c = peekCharInSourceFile(),
+    end_delimeter; 
 
     // 1b1 ? 
     switch( c )
     {
         case '/':
         {
-            next_char();
-            c = top_char();
+            nextCharInSourceFile();
+            c = peekCharInSourceFile();
             if(c == '/') // single line comm 
             {
-                next_char();
-                c = top_char();
+                nextCharInSourceFile();
+                c = peekCharInSourceFile();
                 while(c != EOF && c!= '\n')
                 {
                     tmp+=c;
-                    next_char();
-                    c = top_char();
+                    nextCharInSourceFile();
+                    c = peekCharInSourceFile();
                 }
-                tok->type = TT_C ;
-                tok->string_val = strdup(tmp.c_str());
+                tok->type = static_cast<int>(Token::type::C) ;
+                tok->stringVal = strdup(tmp.c_str());
                 return tok;
             }
             else if( c == '*') /* multiline */
             {
-                next_char();
-                c = top_char();
+                nextCharInSourceFile();
+                c = peekCharInSourceFile();
                 while(c!= EOF )
                 {
                     if( c == '*')
                     {
-                        next_char();
-                        if(top_char()=='/')
+                        nextCharInSourceFile();
+                        if(peekCharInSourceFile()=='/')
                         {
-                            next_char();
+                            nextCharInSourceFile();
                             break;
                         }
-                        push_char('*');
+                        pushCharToSourceFile('*');
                     } 
                     
                     tmp+=c ; 
-                    next_char();
-                    c = top_char();
+                    nextCharInSourceFile();
+                    c = peekCharInSourceFile();
                 }
-                tok->type = TT_C;
-                tok->string_val = strdup(tmp.c_str());
+                tok->type = static_cast<int>(Token::type::C);
+                tok->stringVal = strdup(tmp.c_str());
                 return tok;
             }
-            push_char('/');
+            pushCharToSourceFile('/');
             goto op_case;
             break;
         }
@@ -126,88 +122,86 @@ struct token* lexer::read_next_token()
             while( c >= '0' && c <= '9' )
             {
                 tmp += c;
-                next_char();
-                c = top_char();
+                nextCharInSourceFile();
+                c = peekCharInSourceFile();
             }
             unsigned long long val = std::stoull(tmp);
-            c = top_char();
-            int type = DEFAULT_NUM;
+            c = peekCharInSourceFile();
+            int type = static_cast<int>(Token::numType::DEFAULT);
             if(c == 'L')
-                type= LONG_NUM;
+                type= static_cast<int>(Token::numType::LONG);
             else if(c== 'f')
-                type = FLOAT_NUM;
-            if(type)
-                next_char();
-            tok->num_type= type;
-            
-            //std::cout<< val <<" \n";
-            tok->type = TT_Num;
-            tok->ull_val = val; 
+                type = static_cast<int>(Token::numType::FLOAT);
+            if(type) // not default as default is zero
+                nextCharInSourceFile();
+            tok->numType= type;
+            tok->type = static_cast<int>(Token::type::Num);
+            tok->ullVal = val; 
             break;
         }
 
         case 'x': // hexa 
         {
-            token* t ;
-            if((*vec_t).size())
-                t = (*vec_t)[(*vec_t).size()-1];
-            if( t->type != TT_Num && t->ull_val != 0 )
+            Token::token* t ;
+            if((*vecTokens).size())
+                t = (*vecTokens)[(*vecTokens).size()-1];
+            if( t->type != static_cast<int>(Token::type::Num) && t->ullVal != 0 )
             {
                 goto id_kw ; 
             }
-            (*vec_t).pop_back(); // remove 0 
-            next_char();
-            c = top_char();
+            (*vecTokens).pop_back(); // remove 0 
+            nextCharInSourceFile();
+            c = peekCharInSourceFile();
             while( isdigit(c) || (c >= 'a' && c <='f') || (c <= 'F' && c>='A') )
             {
                 tmp+=c;
-                next_char();
-                c = top_char();
+                nextCharInSourceFile();
+                c = peekCharInSourceFile();
             }
             unsigned long long num = std::stoull(tmp, nullptr, 16);
-            tok->type = TT_Num; 
-            tok->ull_val = num;
+            tok->type = static_cast<int>(Token::type::Num); 
+            tok->ullVal = num;
             break;
         }
         case 'b': // bin 
         {
-            token* t ;
-            if((*vec_t).size())
-                t = (*vec_t)[(*vec_t).size()-1];
-            if( t->type != TT_Num && t->ull_val != 0 )
+            Token::token* t ;
+            if((*vecTokens).size())
+                t = (*vecTokens)[(*vecTokens).size()-1];
+            if( t->type != static_cast<int>(Token::type::Num) && t->ullVal != 0 )
             {
                 goto id_kw ; 
             }
-            (*vec_t).pop_back(); // remove 0 
-            next_char();
-            c = top_char();
+            (*vecTokens).pop_back(); // remove 0 
+            nextCharInSourceFile();
+            c = peekCharInSourceFile();
             //std::cout<<"-> "<<c;
             while( c == '1' || c =='0' )
             {
                 tmp+=c;
-                next_char();
-                c = top_char();
+                nextCharInSourceFile();
+                c = peekCharInSourceFile();
             }
            // std::cout << "Binary string to convert: \"" << tmp << "\"" << std::endl;
 
             unsigned long long num = std::stoull(tmp, nullptr, 2);
-            tok->type = TT_Num; 
-            tok->ull_val = num;
+            tok->type = static_cast<int>(Token::type::Num); 
+            tok->ullVal = num;
             break;
         }
         case '\'':
         {
-            next_char();
-            // now top_char is the char next to ' 
-            if( top_char() == '\'')
+            nextCharInSourceFile();
+            // now peekCharInSourceFile is the char next to ' 
+            if( peekCharInSourceFile() == '\'')
             {
-                compiler->error_msg("empty quote error \n");
+                compiler->genError("empty quote error \n");
             }
-            c = top_char();
+            c = peekCharInSourceFile();
             if(c == '\\')
             {
                 // escape char
-                c = next_char();
+                c = nextCharInSourceFile();
                 if(c == 'n')
                 {
                     c = '\n';
@@ -225,23 +219,24 @@ struct token* lexer::read_next_token()
                     c = '\'';
                 }
             }
-            tok->type = TT_Sym ; // TODO quote? 
-            tok->char_val = c ; 
-            next_char();
-            c = next_char();
+            tok->type = static_cast<int>(Token::type::Sym) ; // TODO quote? 
+            tok->charVal = c ; 
+            nextCharInSourceFile();
+            c = nextCharInSourceFile();
             if( c != '\'')
             {
-                compiler->error_msg("quote multi-char error \n");
+                compiler->genError("quote multi-char error \n");
             }
             break;
         }
-        OPERATOR_CASE:
+        
+        OPERATOR_CASE_WITHOUT_DIVISION:
         {
             if(c == '<')
             {
                 ; // #include <string.h> case
-                auto x = (*vec_t)[vec_t->size()-1];
-                if((x->type == TT_KW) && (x->string_val == "include"))
+                auto x = (*vecTokens)[vecTokens->size()-1];
+                if(x->type == static_cast<int>(Token::type::KW) && (x->stringVal == "include"))
                 {
                     end_delimeter = '>';
                     goto string_case ;
@@ -249,32 +244,32 @@ struct token* lexer::read_next_token()
 
             }
             op_case :;
-            tok->type = TT_OP; 
-            c = next_char(); // c is first operator
+            tok->type = static_cast<int>(Token::type::OP); 
+            c = nextCharInSourceFile(); // c is first operator
             tmp += c ; 
             //std::cout<<"entered operator case \n";
             if(!( c == '(' || c == '[' || c == ',' || c == '.' || c == '*' || c == '?' ))
             {
                 //std::cout<<"checking 2nd op \n";
-                c = top_char(); //SECOND operator
+                c = peekCharInSourceFile(); //SECOND operator
                 if( c == '(' || c == '[' || c == ',' || c == '.' || c == '*' || c == '?' )
                 {
                     goto jump1;
                 }
                 switch(c)
                 {
-                    OPERATOR_CASE:
+                    OPERATOR_CASE_WITHOUT_DIVISION:
                     case '/':
                     {
                         // INSIDE
-                        c = next_char(); // still second
+                        c = nextCharInSourceFile(); // still second
                         tmp+=c;
                         //std::cout<<tmp<<" we got 2nd op \n";
                         if(
-                            ( tmp == ".."                 && ('.' == top_char())) ||
-                            ( tmp == "<<" || tmp == ">>") && ('=' == top_char())
+                            ( tmp == ".."                 && ('.' == peekCharInSourceFile())) ||
+                            ( tmp == "<<" || tmp == ">>") && ('=' == peekCharInSourceFile())
                         )
-                            tmp += next_char(); // third
+                            tmp += nextCharInSourceFile(); // third
                         else if (!((tmp == "++") || (tmp == "--") ||
                                 (tmp == "->") || (tmp == "==") ||
                                 (tmp == "!=") || (tmp == ">=") ||
@@ -286,7 +281,7 @@ struct token* lexer::read_next_token()
                                 (tmp == "&=") || (tmp == "|=") ||
                                 (tmp == "^=") || (tmp == "->")
                         ))
-                            compiler->error_msg("operator %s is not valid! \n",strdup(tmp.c_str()));
+                            compiler->genError("operator %s is not valid! \n",strdup(tmp.c_str()));
                         
                         break;
                     }
@@ -294,41 +289,40 @@ struct token* lexer::read_next_token()
             }
             jump1:;
 
-            tok->string_val = strdup(tmp.c_str()) ;
-            //std::cout<< "tok: "<< tok->string_val<< std::endl;
+            tok->stringVal = strdup(tmp.c_str()) ;
+            //std::cout<< "tok: "<< tok->stringVal<< std::endl;
             if(c == '(')
             {
                 if(!expressions++)
-                    bracket_content = "";
+                    parenContent = "";
             } 
 
             break;
         }
         SYMBOL_CASE:
         // opening bracket is op, closing is sym ? 
-            next_char();
+            nextCharInSourceFile();
             if( c == ')')
             {
                 if(--expressions <0)
-                {
-                    compiler->error_msg("extra close bracket error \n");
-                }
+                    compiler->genError("extra close bracket error \n");
+                
             }
-            tok->type = TT_Sym;
-            tok->char_val =  c; 
+            tok->type = static_cast<int>(Token::type::Sym);
+            tok->charVal =  c; 
             break;
 
         case '\n':
-            next_char();
-            tok->type= TT_Newl;
+            nextCharInSourceFile();
+            tok->type= static_cast<int>(Token::type::Newl);
             break;
 
         case '"':
         {
             end_delimeter = '"';
             string_case:;
-            next_char();
-            c = next_char();
+            nextCharInSourceFile();
+            c = nextCharInSourceFile();
             //std::cout<<"the next char is "<<c<<std::endl;
             while(c!= end_delimeter && c!=EOF )
             {
@@ -338,23 +332,24 @@ struct token* lexer::read_next_token()
                     continue;
                 }
                 tmp+=c;
-                c= next_char();
+                c= nextCharInSourceFile();
             }
-            tok->type = TT_Str;
-            tok->string_val = strdup(tmp.c_str());
+            tok->type = static_cast<int>(Token::type::Str);
+            tok->stringVal = strdup(tmp.c_str());
             break;
         }
         case ' ':
         case '\t':
         {
-            if (!vec_t->empty())
+            // TODO this IF condition, the spaceNext overall doesnt seem to be useful
+            if (!vecTokens->empty())
             {
-                token* last = (*vec_t)[vec_t->size() - 1];
-                last->space_next = true;
+                Token::token* last = (*vecTokens)[vecTokens->size() - 1];
+                last->spaceNext = true;
             }
-            next_char();  // Consume the whitespace
+            nextCharInSourceFile();  // Consume the whitespace
             delete tok;   // Avoid leaking unused token
-            return read_next_token();  // Continue lexing
+            return getNextToken();  // Continue lexing
         }
         case EOF:  
             delete tok;
@@ -369,8 +364,8 @@ struct token* lexer::read_next_token()
                 while( isalnum(c) || c =='_' )
                 {
                     tmp+= c; 
-                    next_char();
-                    c = top_char();
+                    nextCharInSourceFile();
+                    c = peekCharInSourceFile();
                 }
                 if (tmp == "unsigned" || tmp == "signed" || tmp == "char" ||
                     tmp == "short" || tmp == "int" || tmp == "long" ||
@@ -384,14 +379,14 @@ struct token* lexer::read_next_token()
                     tmp == "typedef" || tmp == "const" || tmp == "extern" ||
                     tmp == "restrict"
                 )
-                    tok->type = TT_KW ;
+                    tok->type = static_cast<int>(Token::type::KW) ;
                 else 
-                    tok->type = TT_ID ; 
-                tok->string_val = strdup(tmp.c_str());
+                    tok->type = static_cast<int>(Token::type::ID) ; 
+                tok->stringVal = strdup(tmp.c_str());
                 break;
             }
 
-            compiler->error_msg("Unexpected token \n");
+            compiler->genError("Unexpected token \n");
     }
     return tok;
 }
@@ -399,20 +394,18 @@ struct token* lexer::read_next_token()
 int lexer::lex()
 {
     expressions=0;
-    bracket_content = ""; 
+    parenContent = ""; 
     // globalise the isntance ? TODO 
-    filename = compiler->path;
-    struct token *token = read_next_token();
+    fileName = compiler->path;
+    struct Token::token *token = getNextToken();
     while(token)
     {
-        //std::cout<<"walhalla";
-        (*vec_t).push_back(token);
-        //std::cout<<"size: "<< (*vec_t).size() << std::endl;
-        token = read_next_token();
+        (*vecTokens).push_back(token);
+        token = getNextToken();
     }
 
-    compiler->vec_t = vec_t;
-    return LEXER_SUCCESS;
+    compiler->vecTokens = vecTokens;
+    return 1;
 }
 
 

@@ -1,4 +1,5 @@
-#include "parser.h"
+//#include "parser.h"
+#include "compiler.h"
 #include <iostream>
 #include "sleep.h"
 #include <memory.h>
@@ -393,6 +394,44 @@ void DT::datatype::parse(compilation* compiler)
     }
 
 }
+
+/*void record::parse_exressionable_root()
+{
+    parse_expressionable();
+    struct node* result_node = node_pop();
+    node_push(result_node);
+}*/
+
+void DT::datatype::parse_var(compilation* compiler, token* tok, 
+record* rec)
+{
+    std::cout << "entered parse_var with tok: \n" ;
+    tok->print(); 
+    node* val = nullptr; 
+    // TODO check for brackets
+    if(tok->type== TT_OP && !strcmp(tok->string_val,"=") )
+    {
+        // parse_expressionable_root
+        tok = compiler->token_at(++compiler->token_ptr);
+        std::cout << "dealing with token: \n";
+        tok->print();
+            auto value_node = new Node::node();
+            value_node->push(compiler->vec_n);
+            value_node->type = Node::id_;
+            value_node->val.string_val = tok->string_val; 
+            compiler->token_ptr++;
+        auto var_node = new Node::node();
+
+        var_node->type = Node::var_ ;
+        var_node->exp_var_union.var.name = value_node->val.string_val;
+        var_node->exp_var_union.var.type = this ;
+        var_node->exp_var_union.var.val = value_node;
+    
+        // TODO CALC STACK OFFSET
+        var_node->push(compiler->vec_n);
+    }
+}
+
 void record::parse_var_func_struct_union()
 {
     //std::cout<<"pvfsu entry \n";
@@ -401,8 +440,15 @@ void record::parse_var_func_struct_union()
     dt->set_flag(DT::flag::IS_SIGNED);
     ifc has_datatype_changed(dt);
     dt->parse(compiler);
-    // dt here ?
-    //std::cout<<"pvfsu exit \n";
+    std::cout<<"AFter parse, here is token: \n";
+    if(compiler->token_ptr < compiler->vec_t[0].size())
+    {
+        auto tok = compiler->token_at(compiler->token_ptr);
+        tok->print();
+        // dt here ?
+        //std::cout<<"pvfsu exit \n";
+        dt->parse_var(compiler,tok,this);
+    }
 }
 
 void record::parse_kw(token* tok)
@@ -453,26 +499,26 @@ void Node::node::node_shift_children_left()
 {
     //ip num1 * (num2 + num3)
     //op (num1 * num2) + num3
-    if(type != Node::exp_ || (expunion.exp.right->type != Node::exp_))
+    if(type != Node::exp_ || (exp_var_union.exp.right->type != Node::exp_))
     {
         ifdm("can't shift left: invalid op \n");
         exit(-1);
     }
-    const char* right_op = expunion.exp.right->expunion.exp.op;
-    Node::node* new_leftchild = expunion.exp.left; 
-    Node::node* new_rightchild = expunion.exp.right->expunion.exp.left; 
+    const char* right_op = exp_var_union.exp.right->exp_var_union.exp.op;
+    Node::node* new_leftchild = exp_var_union.exp.left; 
+    Node::node* new_rightchild = exp_var_union.exp.right->exp_var_union.exp.left; 
     
     Node::node* new_leftnode = new Node::node();
     new_leftnode->type= Node::exp_ ; 
-    new_leftnode->expunion.exp.left = new_leftchild;
-    new_leftnode->expunion.exp.right = new_rightchild;
-    new_leftnode->expunion.exp.op = expunion.exp.op;
+    new_leftnode->exp_var_union.exp.left = new_leftchild;
+    new_leftnode->exp_var_union.exp.right = new_rightchild;
+    new_leftnode->exp_var_union.exp.op = exp_var_union.exp.op;
 
-    Node::node* new_rightnode = expunion.exp.right->expunion.exp.right;
+    Node::node* new_rightnode = exp_var_union.exp.right->exp_var_union.exp.right;
     
-    expunion.exp.left = new_leftnode;
-    expunion.exp.right = new_rightnode;
-    expunion.exp.op = right_op;
+    exp_var_union.exp.left = new_leftnode;
+    exp_var_union.exp.right = new_rightnode;
+    exp_var_union.exp.op = right_op;
 }
 
 void Node::node::reorder_expression()
@@ -485,8 +531,8 @@ void Node::node::reorder_expression()
         return;
     }
 
-    auto left = expunion.exp.left;
-    auto right = expunion.exp.right;
+    auto left = exp_var_union.exp.left;
+    auto right = exp_var_union.exp.right;
 
     bool left_is_exp = left && (left->type == Node::exp_);
     bool right_is_exp = right && (right->type == Node::exp_);
@@ -501,15 +547,15 @@ void Node::node::reorder_expression()
     {
         // left op, right op  a*(b+c)
         ifdm("checking if we eval left \n");
-        if(should_we_eval_left(expunion.exp.op, expunion.exp.right->expunion.exp.op))
+        if(should_we_eval_left(exp_var_union.exp.op, exp_var_union.exp.right->exp_var_union.exp.op))
         {
             ifdm("we r to eval left, so lets print before first \n");   
             ifd display(0);     
             node_shift_children_left();
             ifdm("printing after \n");
             ifd display(0);
-            if (expunion.exp.left) expunion.exp.left->reorder_expression();
-            if (expunion.exp.right) expunion.exp.right->reorder_expression();
+            if (exp_var_union.exp.left) exp_var_union.exp.left->reorder_expression();
+            if (exp_var_union.exp.right) exp_var_union.exp.right->reorder_expression();
         }
     }
 }
@@ -560,10 +606,10 @@ void record::parse_exp_normal(token* tok)
     ifd std::cout << right->val.ull_val <<std::endl;
     auto exp = new Node::node();
     exp->type = Node::exp_ ;
-    //exp->expunion.exp
-    exp->expunion.exp.left = left;
-    exp->expunion.exp.right = right ;
-    exp->expunion.exp.op = op;
+    //exp->exp_var_union.exp
+    exp->exp_var_union.exp.left = left;
+    exp->exp_var_union.exp.right = right ;
+    exp->exp_var_union.exp.op = op;
     exp->reorder_expression();
     exp->push(compiler->vec_n);
 }
@@ -635,6 +681,7 @@ int record::parse_expressionable_single()
     // ptr is not yet incremented which is to be noted
 
 }
+
 
 void record::parse_expressionable()
 {
@@ -738,13 +785,13 @@ void Node::node::display(int level)
     if(type == exp_)
     {
         gap(level);
-        std::cout<<"It is an expression Node with op: "<< expunion.exp.op << std::endl ;
+        std::cout<<"It is an expression Node with op: "<< exp_var_union.exp.op << std::endl ;
         gap(level);
         std::cout<< "Left node: \n";
-        expunion.exp.left->display(level+1);
+        exp_var_union.exp.left->display(level+1);
         gap(level);
         std::cout<<"right node: \n";
-        expunion.exp.right->display(level+1);
+        exp_var_union.exp.right->display(level+1);
     }
     else if(type == number_)
     {

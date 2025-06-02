@@ -1,98 +1,61 @@
 #ifndef _lexer
 #define _lexer 
-
+#include "token.h"
 #include "compiler.h"
 #include <string>
 #include <vector>
 
-enum 
-{
-    DEFAULT_NUM ,
-    LONG_NUM, 
-    FLOAT_NUM,
-    DOUBLE_NUM
-};
 #define NUMBER_CASE \
-    case '0':       \
-    case '1':       \
-    case '2':       \
-    case '3':       \
-    case '4':       \
-    case '5':       \
-    case '6':       \
-    case '7':       \
-    case '8':       \
-    case '9' 
+    case '0': case '1': case '2': case '3': case '4': \
+    case '5': case '6': case '7': case '8': case '9'
 
-#define OPERATOR_CASE                   \
-    case '+':                           \
-    case '-':                           \
-    case '*':                           \
-    case '>':                           \
-    case '<':                           \
-    case '^':                           \
-    case '%':                           \
-    case '!':                           \
-    case '=':                           \
-    case '~':                           \
-    case '|':                           \
-    case '&':                           \
-    case '(':                           \
-    case '[':                           \
-    case ',':                           \
-    case '.':                           \
-    case '?'
+#define OPERATOR_CASE_WITHOUT_DIVISION \
+    case '+': case '-': case '*': case '%': case '^': /* arithmetic */ \
+    case '>': case '<': case '=': case '!':           /* comparison */ \
+    case '&': case '|': case '~':                     /* bitwise */   \
+    case '(': case '[': case ',': case '.': case '?'
+
 
 #define SYMBOL_CASE \
-    case '{':       \
-    case '}':       \
-    case ':':       \
-    case ';':       \
-    case '#':       \
-    case '\\':      \
-    case ')':       \
-    case ']'  
-enum 
-{
-    LEXER_SUCCESS,
-    LEXER_INPUT_ERROR
-};
+    case '{': case '}':           /* braces */       \
+    case ')': case ']': /* parens/brackets */ \
+    case ':': case ';':           /* separators */   \
+    case '#': case '\\'           /* preproc/escape */
 
 struct lexer 
 {
-    lexer(compilation* compiler, std::string notes)
-        : line_no(1),
-          col_no(1),
-          vec_t(new std::vector<token*>()),
+    int lineNo , colNo, expressions ; 
+    const char* fileName; 
+    std::vector< Token::token* > *vecTokens; 
+    compilation* compiler; 
+    std::string parenContent; 
+
+    lexer(compilation* compiler)
+        : lineNo(1),
+          colNo(1),
+          vecTokens(new std::vector<Token::token*>()),
           compiler(compiler),
-          expressions(0),
-          notes(notes),
-          notes_ptr(0)
+          expressions(0)
     {}
 
     ~lexer() {
-        delete vec_t;
+        delete vecTokens;
     }
-    int line_no , col_no ; 
-    const char* filename; 
-    std::vector< token* > *vec_t; 
-    compilation* compiler; 
 
-    int expressions; 
-    std::string bracket_content; 
-
-    std::string notes; 
-    int notes_ptr ;
-
-    char next_char(bool mode = false );
-    char top_char(bool mode = false );
-    void push_char(char c, bool mode = false);
-    //void* lexer_note();
-    //std::vector<token*> *lexer_tokens();
-    token* read_next_token();
+    char nextCharInSourceFile( );
+    char peekCharInSourceFile();
+    void pushCharToSourceFile(char c);
+    Token::token* getNextToken();
     int lex(); 
 };
 
-
+   //void* lexer_note();
+   //std::vector<Token::token*> *lexer_tokens();
+   // std::string notes; 
+   // int notes_ptr ;
+   
+   //,
+          //notes(notes),
+          //notes_ptr(0)
 
 #endif 

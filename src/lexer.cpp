@@ -4,10 +4,53 @@
 #include <stdlib.h>
 #include <iostream>
 #include <cstring>
+// check header file for the function overviews in this file
+/*
+
+BLUEPRINT OF LEXER: 
+
+check chars one by one 
+switch the char to multiple cases 
+
+    case / 
+        can be division or single or multi line comment
+        if not comments, JUMP to operator case 
+    case number
+        fill the number 
+        check type (letter after number)
+    case x/b 
+        check 0 in before token 
+        fill number as bin/hex
+    case ' (quote)
+        if next \ : escape sequence
+        if not \, just store as symbol
+        check closing ' 
+    case operator without division
+        if < check for include and go to string case if applicable
+        if one of ([,.*? , then single token
+        else they can include more symbols as operator so check 
+    case symbol
+        if ) check if allowed
+    case \n 
+        straightforward token
+    case "
+        check for delimeter and continue checking, can include escape char 
+    case \t or space
+        set prev token as next_space = true 
+    default case 
+        check isalpha/underscore as first char
+            check isalnum and underscore from 2nd
+    
+    the goal is to fill the std::vector<Token::token*> *vecTokens
+    and return 0/1 based on verdict of success
+
+*/
+
 std::string Token::token::type_and_val_to_str()
 {
     switch(type)
     {
+        // casting is done to convert enum class into type
         case static_cast<int>(Token::type::Num):
             return "Number "+ std::to_string(ullVal) ;
         case static_cast<int>(Token::type::Str):
@@ -15,7 +58,7 @@ std::string Token::token::type_and_val_to_str()
         case static_cast<int>(Token::type::OP):
             return "Operator "+ std::string(stringVal);
         case static_cast<int>(Token::type::Sym):
-            return "Symbol " + charVal;
+            return std::string("Symbol ") + charVal;
         case static_cast<int>(Token::type::ID):
             return "Identifier "+ std::string(stringVal);
         case static_cast<int>(Token::type::KW):
@@ -30,8 +73,14 @@ std::string Token::token::type_and_val_to_str()
 }
 void Token::token::print()
 {
+    // calling the utility function defined above 
     std::cout << type_and_val_to_str() << std::endl;
 }
+void Token::token::print(std::ofstream& wr)
+{
+    wr << type_and_val_to_str() << std::endl;
+}
+
 char lexer::nextCharInSourceFile()
 {
     compiler->colNo++;
@@ -59,22 +108,36 @@ void lexer::pushCharToSourceFile(char c)
 
 struct Token::token* lexer::getNextToken()
 {
+    ifdlm("Getting next Token \n");
+
+    // declaraing and constructing a new empty token to fill based on reading char stream of source file
     auto tok = new Token::token();
+
+    // debugging purpose
     if(expressions>0)
         tok->bracketGroup = strdup(parenContent.c_str()) ;
+
+    // the tmp will store the string value, using std::string for ease in concatenation
     std::string tmp= "";
     char c = peekCharInSourceFile(),
     end_delimeter; 
 
-    // 1b1 ? 
+    // 1b1 TODO, the syntax should not be allowed, it compiles. 
+
+    ifdl if( c != EOF )lexerDebugger<<"Switch --> " << c << std::endl; else lexerDebugger<<"EOF case \n";
+    // the switch takes a char and decides what it can be based on conditions
     switch( c )
     {
+        // a stream when starting with / can mean a comment, or division
         case '/':
         {
+            // checking the next char followed immedietly by / 
             nextCharInSourceFile();
             c = peekCharInSourceFile();
-            if(c == '/') // single line comm 
+            if(c == '/') // single line comment if 2 /'s consecutive
             {
+                ifdlm("second / : single comment begin \n");
+                // so in this case, read entire line unless its EOF
                 nextCharInSourceFile();
                 c = peekCharInSourceFile();
                 while(c != EOF && c!= '\n')
@@ -83,12 +146,16 @@ struct Token::token* lexer::getNextToken()
                     nextCharInSourceFile();
                     c = peekCharInSourceFile();
                 }
+                // this type is obviously a comment, and the comment data will be stored in heap, returns pointer to token
                 tok->type = static_cast<int>(Token::type::C) ;
                 tok->stringVal = strdup(tmp.c_str());
                 return tok;
             }
             else if( c == '*') /* multiline */
             {
+                ifdlm("/* : multi comment begin \n");
+                // now * followed by a / means the begin of multi line comment, 
+                // we read until EOF or */ but not erroring if not found */
                 nextCharInSourceFile();
                 c = peekCharInSourceFile();
                 while(c!= EOF )
@@ -98,9 +165,12 @@ struct Token::token* lexer::getNextToken()
                         nextCharInSourceFile();
                         if(peekCharInSourceFile()=='/')
                         {
+                            // now that the chars for comments over, next chat to proceed to swith()
+                            ifdlm("multi Line end \n");
                             nextCharInSourceFile();
                             break;
                         }
+                        //we went to next char, but since it was false alarm, we push it back
                         pushCharToSourceFile('*');
                     } 
                     
@@ -112,13 +182,16 @@ struct Token::token* lexer::getNextToken()
                 tok->stringVal = strdup(tmp.c_str());
                 return tok;
             }
+            //we tried looking at char next to / for comments but we need to push it back for operator processing because we can confirm it to be division
             pushCharToSourceFile('/');
+            ifdlm("It is not the comments, so it is division \n");
             goto op_case;
             break;
         }
 
         NUMBER_CASE:
         {
+            // if a char is number, we read till we get a non number. 
             while( c >= '0' && c <= '9' )
             {
                 tmp += c;
@@ -126,6 +199,8 @@ struct Token::token* lexer::getNextToken()
                 c = peekCharInSourceFile();
             }
             unsigned long long val = std::stoull(tmp);
+            ifdl lexerDebugger << "Got Number "<<val<< " with numTYpe: ";
+            // after number, we may encounter a numtype as like eg. a = 12f indicateing float
             c = peekCharInSourceFile();
             int type = static_cast<int>(Token::numType::DEFAULT);
             if(c == 'L')
@@ -134,6 +209,7 @@ struct Token::token* lexer::getNextToken()
                 type = static_cast<int>(Token::numType::FLOAT);
             if(type) // not default as default is zero
                 nextCharInSourceFile();
+            ifdl lexerDebugger << type << std::endl ;
             tok->numType= type;
             tok->type = static_cast<int>(Token::type::Num);
             tok->ullVal = val; 
@@ -147,8 +223,10 @@ struct Token::token* lexer::getNextToken()
                 t = (*vecTokens)[(*vecTokens).size()-1];
             if( t->type != static_cast<int>(Token::type::Num) && t->ullVal != 0 )
             {
+                ifdlm("ID/kw starting with x (ruled out hexadecimal number) \n");
                 goto id_kw ; 
             }
+            ifdlm("Hexa number to be expected as 0 preceeding x \n");
             (*vecTokens).pop_back(); // remove 0 
             nextCharInSourceFile();
             c = peekCharInSourceFile();
@@ -159,6 +237,7 @@ struct Token::token* lexer::getNextToken()
                 c = peekCharInSourceFile();
             }
             unsigned long long num = std::stoull(tmp, nullptr, 16);
+            ifdl lexerDebugger<<"Hex: "<< num <<std::endl;
             tok->type = static_cast<int>(Token::type::Num); 
             tok->ullVal = num;
             break;
@@ -170,8 +249,10 @@ struct Token::token* lexer::getNextToken()
                 t = (*vecTokens)[(*vecTokens).size()-1];
             if( t->type != static_cast<int>(Token::type::Num) && t->ullVal != 0 )
             {
+                ifdlm("ID/kw starting with x (ruled out binary number) \n");
                 goto id_kw ; 
             }
+            ifdlm("bin number to be expected as 0 preceeding x \n");
             (*vecTokens).pop_back(); // remove 0 
             nextCharInSourceFile();
             c = peekCharInSourceFile();
@@ -185,6 +266,7 @@ struct Token::token* lexer::getNextToken()
            // std::cout << "Binary string to convert: \"" << tmp << "\"" << std::endl;
 
             unsigned long long num = std::stoull(tmp, nullptr, 2);
+            ifdl lexerDebugger<<"Bin: "<< num <<std::endl;
             tok->type = static_cast<int>(Token::type::Num); 
             tok->ullVal = num;
             break;
@@ -200,7 +282,7 @@ struct Token::token* lexer::getNextToken()
             c = peekCharInSourceFile();
             if(c == '\\')
             {
-                // escape char
+                ifdlm("escape char: ");
                 c = nextCharInSourceFile();
                 if(c == 'n')
                 {
@@ -218,8 +300,9 @@ struct Token::token* lexer::getNextToken()
                 {
                     c = '\'';
                 }
+                ifdl lexerDebugger<< c << std::endl;
             }
-            tok->type = static_cast<int>(Token::type::Sym) ; // TODO quote? 
+            tok->type = static_cast<int>(Token::type::Sym) ; // TODO quote? 'c' instead of c 
             tok->charVal = c ; 
             nextCharInSourceFile();
             c = nextCharInSourceFile();
@@ -238,6 +321,7 @@ struct Token::token* lexer::getNextToken()
                 auto x = (*vecTokens)[vecTokens->size()-1];
                 if(x->type == static_cast<int>(Token::type::KW) && (x->stringVal == "include"))
                 {
+                    ifdlm("< while having include earlier => to expect string, not treating as operator \n");
                     end_delimeter = '>';
                     goto string_case ;
                 }
@@ -247,13 +331,13 @@ struct Token::token* lexer::getNextToken()
             tok->type = static_cast<int>(Token::type::OP); 
             c = nextCharInSourceFile(); // c is first operator
             tmp += c ; 
-            //std::cout<<"entered operator case \n";
             if(!( c == '(' || c == '[' || c == ',' || c == '.' || c == '*' || c == '?' ))
             {
-                //std::cout<<"checking 2nd op \n";
+                ifdl lexerDebugger << c << " can expect more chars to the operator \n";
                 c = peekCharInSourceFile(); //SECOND operator
                 if( c == '(' || c == '[' || c == ',' || c == '.' || c == '*' || c == '?' )
                 {
+                    ifdl lexerDebugger << "But not for "<< c <<std::endl;
                     goto jump1;
                 }
                 switch(c)
@@ -300,6 +384,8 @@ struct Token::token* lexer::getNextToken()
             break;
         }
         SYMBOL_CASE:
+        {
+            ifdl lexerDebugger << "In Symbol case with " << c << std::endl;
         // opening bracket is op, closing is sym ? 
             nextCharInSourceFile();
             if( c == ')')
@@ -310,8 +396,9 @@ struct Token::token* lexer::getNextToken()
             }
             tok->type = static_cast<int>(Token::type::Sym);
             tok->charVal =  c; 
+            ifdl lexerDebugger<<"token symbol: "<<c<<std::endl;
             break;
-
+        }
         case '\n':
             nextCharInSourceFile();
             tok->type= static_cast<int>(Token::type::Newl);
@@ -320,6 +407,7 @@ struct Token::token* lexer::getNextToken()
         case '"':
         {
             end_delimeter = '"';
+            ifdlm("will check string with end_delimeter \"\n");
             string_case:;
             nextCharInSourceFile();
             c = nextCharInSourceFile();
@@ -388,11 +476,14 @@ struct Token::token* lexer::getNextToken()
 
             compiler->genError("Unexpected token \n");
     }
+    ifdl lexerDebugger<<"\tToken to be returned : \n";
+    ifdl tok->print(lexerDebugger);
     return tok;
 }
 
 int lexer::lex()
 {
+    ifdlm("***LEXER STARTED***\n");
     expressions=0;
     parenContent = ""; 
     // globalise the isntance ? TODO 
@@ -405,6 +496,7 @@ int lexer::lex()
     }
 
     compiler->vecTokens = vecTokens;
+    ifdlm("***LEXER ENDED***\n");
     return 1;
 }
 

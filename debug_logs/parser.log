@@ -1,0 +1,129 @@
+started parsing 
+  In parse_next() with tok 
+  Number 12
+  In Parsing potential Expressions.. 
+    entered makeOneNode with token
+    Number 12
+    number node made and pusehd to vecNodes 
+    token pointer moved forward 1 position 
+    returning from MakeOneNode:     1
+    entered makeOneNode with token
+    Operator *
+    Dealing with Op 
+    checking and making Expression 
+    left node is an expression element!
+    number val: 12
+    token pointer moved forward 
+    in parseexpressionableforop() 
+    In Parsing potential Expressions.. 
+      entered makeOneNode with token
+      Number 34
+      number node made and pusehd to vecNodes 
+      token pointer moved forward 1 position 
+      returning from MakeOneNode:       1
+      entered makeOneNode with token
+      Operator +
+      Dealing with Op 
+      checking and making Expression 
+      left node is an expression element!
+      number val: 34
+      token pointer moved forward 
+      in parseexpressionableforop() 
+      In Parsing potential Expressions.. 
+        entered makeOneNode with token
+        Number 123
+        number node made and pusehd to vecNodes 
+        token pointer moved forward 1 position 
+        returning from MakeOneNode:         1
+        entered makeOneNode with token
+        Keyword int
+        	entered parseKw with token: 
+        Keyword int
+        	the token is a type modifier or datatype, we can expect form of (typeMod)*(datatype)+(typemod)* {* means 0+, + means 1+} 
+        	entered parseDeclaration to parse potential VFSU 
+        [datatype tracker called] 
+        [datatype tracker] First-time initialization.
+        	entered DT::datatype::parse. Starting series mod-type-mod 
+        	entered parseMod (100) with token: 
+        Keyword int
+        	checking flags for the consecutive mods 
+        in series mod-type-mod, first mod done 
+        _
+[datatype tracker called] 
+_
+        	at parse dt type (010) with tokens: 
+        Keyword int
+        Keyword int
+        	We got a valid 2nd dt type 
+        	checking star count, check token first: 
+        Operator *
+        	STAR++         
+	star cnt: 1
+        in dt init 
+        	dt1 type int 
+        	dt2 type int 
+        	dt2 attaching to dt1 
+        in series mod-type-mod, type done 
+        _
+[datatype tracker called] 
+[datatype changed] pdepth      : 0 -> 1
+[datatype changed] type        : 0 -> 3
+[datatype changed] flags       : 1 -> 257
+[datatype changed] size        : 0 -> 8
+[datatype changed] sec         : 0 -> 0x555555587050
+[datatype changed] typeStr     : '(null)' -> 'int'
+        [datatype tracker] Updated internal copy.
+_
+        	entered parseMod (100) with token: 
+        Identifier a
+        	checking flags for the consecutive mods 
+        in series mod-type-mod, second mod done 
+        _
+[datatype tracker called] 
+_
+Finally the dt: 
+        pdepth: 1 type: 3 
+flags: 0000000100000001
+size: 8 
+ typeStr: int 
+secondary: 
+
+        After parse, here is token currently pointed at: 
+        Identifier a
+        entered parseVar with tok: 
+Identifier a
+        returning from MakeOneNode:         1
+        entered makeOneNode with token
+        Identifier a
+        Identifier node made and pusehd to vecNodes 
+        token pointer moved 1 position 
+        returning from MakeOneNode:         1
+        entered makeOneNode with token
+      right node: 
+      called reorder exp 
+      no child is exp, so returning 
+      returning from MakeOneNode:       1
+      entered makeOneNode with token
+    right node: 
+    It is an expression Node with op: +
+    Left node: 
+      number val: 34
+    right node: 
+    called reorder exp 
+    Node Shift required 
+    Node after shift: 
+    It is an expression Node with op: +
+    Left node: 
+      It is an expression Node with op: *
+      Left node: 
+        number val: 12
+      right node: 
+        number val: 34
+    right node: 
+    left child also calling reorder exp 
+      called reorder exp 
+      no child is exp, so returning 
+    right child also calling reorder exp 
+      called reorder exp 
+      it is not exp, returning 
+    returning from MakeOneNode:     1

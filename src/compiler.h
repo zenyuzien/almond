@@ -2,39 +2,41 @@
 #define _almond 
 
 #include <string>
-#include <stdio.h>
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
 #include "token.h"
+#include <fstream>
 #include <iostream>
 #include <memory.h>
-#include <vector>
-#include <string>
 #include <bitset>
 #include <inttypes.h> // for PRIu16, PRIu64
 
 
+extern bool LEXER_DEBUG ;
+extern std::ofstream lexerDebugger;
+#define ifdl if(LEXER_DEBUG) 
+#define ifdlm(msg) if(LEXER_DEBUG) lexerDebugger<< msg; 
 
-extern bool debugParse ;
-extern bool customParse;
-#define ifd if(debugParse)
-#define ifc if(customParse)
-#define ifdm(msg) do { if (debugParse) std::cout << msg ; } while (0)
-#define ifcm(msg) do { if (customParse) std::cout << msg ; } while (0)
 
+
+// forward declarations to fix cross-reference issues
 struct compilation;
 namespace Node { struct node ;}
 namespace DT { struct datatype ;}
 
+// namespace for 'symbol' used in symbol table operations
 namespace SYM 
 {
+    // a symbol can be one of the three.
+    // TODO: why flags when mutually exclusive ?
     enum class type 
     {
         node     = 0b0001,
-        native_f = 0b0010,
+        nativeF = 0b0010,
         undef    = 0b0100
     };
+    // the structure of the actual symbol
     struct symbol
     {
         std::string name; 
@@ -246,15 +248,15 @@ namespace Node
 
 
         // implementatios of these can be found in parser.cpp
-        void push(std::vector<node*>* v);
-        void display(int);
+        void pushInto(std::vector<node*>* v);
+        void printNode(int, bool isdebug = false);
         void nodeShiftChildrenLeft();
-        void reorderExpression();
+        void reorderExpression(int lev=0);
         
-        // idk what this node_set_vector is trying to do
+        // idk what this nodeSet_vector is trying to do
     };
-    node* top(std::vector<node*>* v);
-    node* pop(std::vector<node*>* v);
+    node* topOf(std::vector<node*>* v);
+    node* popFrom(std::vector<node*>* v);
 };
 
 struct record 
@@ -266,15 +268,15 @@ struct record
         compiler = c;
         flags =f ;
     }
-    int parse_expressionable_single();
-    void parse_expressionable();
-    void parse_expressionable_for_op(const char* op);
-    void parse_exp_normal(Token::token* tok);
-    int parse_exp(Token::token* tok);
-    void parse_kw(Token::token* tok);
-    void parse_var_func_struct_union();
-    void parse_kw_for_global();
-    //void parse_exressionable_root();
+    int makeOneNode();
+    void ParsePotentialExpressions();
+    void parseExpressionableForOp(const char* op);
+    void checkAndMakeExp(Token::token* tok);
+    int dealWithOp(Token::token* tok);
+    void parseKw(Token::token* tok);
+    void parseDeclaration();
+    void parseGlobalKeyword();
+    //void parseExressionable_root();
     record * clone(int flags);
 };
 
@@ -299,23 +301,23 @@ namespace DT
         uint16_t flags; // refer enum class DT 
         size_t size;
         struct datatype* sec; // long long
-        const char* type_str ;
+        const char* typeStr ;
         union 
         {
-            struct node* struct_node, *union_node ;
+            struct node* structNode, *unionNode ;
         };
-        void print();
+        void print(bool isdebug = false);
         void parse(compilation* c);
 
-        bool check_flag(DT::flag f);
-        void set_flag(DT::flag f);
-        void unset_flag(DT::flag f);
+        bool checkFlag(DT::flag f);
+        void setFlag(DT::flag f);
+        void unsetFlag(DT::flag f);
 
-        void parse_datatype_modifiers(compilation* c);
-        void parse_datatype_type(compilation* c);
-        void parser_datatype_init(compilation* c, Token::token* dt1,Token::token*dt2, int stars, int expectation );
+        void parseDatatypeModifiers(compilation* c);
+        void parseDatatypeType(compilation* c);
+        void parserDatatypeInit(compilation* c, Token::token* dt1,Token::token*dt2, int stars, int expectation );
     
-        void parse_var(compilation* c, Token::token* tok, record* h);
+        void parseVar(compilation* c, Token::token* tok, record* h);
     };
     enum class type
     {
@@ -335,9 +337,9 @@ namespace DT
         union_,
         struct_
     };
-    bool is_datatype(const char* str);
-    bool is_var_modifier(const char* str);
-    bool has_datatype_changed(struct datatype* current);
+    bool isDatatype(const char* str);
+    bool isTypeModifier(const char* str);
+    bool hasDatatypeChanged(struct datatype* current);
 };
 
 
@@ -362,15 +364,15 @@ struct parser {
     }
 
     int parse();
-    int parse_next();
+    int parseNextNode();
 };
 
-const int left_to_right = 0;
-const int right_to_left = 1;
+const bool leftToRight = 0;
+const bool rightToLeft = 1;
 
-struct parse_priority {
+struct parsePriority {
     std::vector<std::string> operators;
-    int direction;
+    bool direction;
 };
 
 

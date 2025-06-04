@@ -8,13 +8,6 @@
 #include <cstring>
 #include <iostream>
 
-extern bool debugParse ;
-extern bool customParse;
-#define ifd if(debugParse)
-#define ifc if(customParse)
-#define ifdm(msg) do { if (debugParse) std::cout << msg ; } while (0)
-#define ifcm(msg) do { if (customParse) std::cout << msg ; } while (0)
-
 Token::token* compilation::tokenAt()
 {
     return tokenAt(tokenPtr);
@@ -27,12 +20,12 @@ struct Token::token* compilation::tokenAt(int token_ptr)
 
     if(!tok)
     {
-        ifdm("tok invalid from current pointer, eof \n");
+        ifdlm("tok invalid from current pointer, eof \n");
         return nullptr; // EOF
     }
 
-    ifdm("printing the Token::token in single()\n");
-    ifd vecTokens[0][tokenPtr]->print();
+    ifdlm("printing the Token::token in single()\n");
+    ifdl vecTokens[0][tokenPtr]->print();
 
     
     while(tok)
@@ -43,7 +36,7 @@ struct Token::token* compilation::tokenAt(int token_ptr)
         )// check newline comment and // 
            if(token_ptr < (vecTokens[0].size()-1)){
                 tok = vecTokens[0][++token_ptr]; 
-                ifdm("INC PTR++ \n");
+                ifdlm("INC PTR++ \n");
            }
            else // EOF
                 return nullptr;
@@ -79,6 +72,16 @@ int compilation::compileFile
 {    
     ifile = fopen(input_file,"r");
     ofile = fopen(output_file,"w");
+    if(!ifile)
+    {
+        std::cout << "Couldn't open input file "<<input_file<<"\n";
+        exit(-1);
+    }
+    if(!ofile)
+    {
+        std::cout << "Couldn't open output file "<<output_file<<"\n";
+        exit(-1);        
+    }
     this->flags = flags;
 
     if(!ofile)
@@ -96,9 +99,10 @@ int compilation::compileFile
             
 
     std::cout<<"Lexed successfully ! \n";
+    lexerDebugger.close();
     // parsing 
     
-    /*
+    
     auto parse_process = new parser();
     parse_process->compiler = this;
     vecNodes = new std::vector<Node::node*>();
@@ -113,12 +117,12 @@ int compilation::compileFile
     std::cout<< "Nodes summary: size: "<< vecNodes[0].size()<<std::endl;
     for(auto x : vecNodes[0])
     {
-        std::cout<<"______________\n";
-        x->display(0);
-        std::cout<<"______________\n";
+        std::cout<<"_________________________\n";
+        x->printNode(0);
+        std::cout<<"_________________________\n";
         
     }
-*/
+
 
     // code gen
 
@@ -236,7 +240,7 @@ scope* compilation::rootScopeCreate(bool create) // 1 create, 0 free
             auto s = get(name);
             if(!s)
                 return nullptr; 
-            if(s->type & static_cast<int>(SYM::type::native_f))
+            if(s->type & static_cast<int>(SYM::type::nativeF))
                 return nullptr; 
             return s;
         }

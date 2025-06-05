@@ -281,3 +281,16 @@ scope* compilation::rootScopeCreate(bool create) // 1 create, 0 free
                     exit(-1);
             }
         }
+void compilation::printTokensFromCurPointer()
+{
+    std::cout<< "Tokens from cur_pointer: " << tokenPtr << std::endl;
+    for(int i = tokenPtr ; i < vecTokens[0].size(); i++ )
+        vecTokens[0][i]->print();
+}
+void compilation::printTokensFromCurPointer(std::ofstream& wr)
+{
+    wr<< "_____Toks from cur_pointer: " << tokenPtr << "_________"<< std::endl;
+    for(int i = tokenPtr ; i < vecTokens[0].size(); i++ )
+        vecTokens[0][i]->print(wr);
+    wr << "______________________________________\n";
+}

@@ -23,6 +23,7 @@ extern std::ofstream lexerDebugger;
 // forward declarations to fix cross-reference issues
 struct compilation;
 namespace Node { struct node ;}
+typedef std::vector<Node::node*> arrSS; // array static sizes aka array brackets
 namespace DT { struct datatype ;}
 
 // namespace for 'symbol' used in symbol table operations
@@ -62,8 +63,6 @@ namespace SYM
         void buildForNode(Node::node* node);
     };
 };
-
-
 
 struct scope;
 struct compilation
@@ -125,6 +124,9 @@ struct compilation
     void pushScope(void* address, size_t size);
     void* scopeFromTo(scope* s, scope* e);
     void* scopeLastInstance();
+    void printTokensFromCurPointer(std::ofstream& wr);
+    void printTokensFromCurPointer();
+    void skipCharOrError(char c);
 
 };
 
@@ -152,8 +154,6 @@ struct scope
     void* instanceAt(int index);
     void* top();
 };
-
-
 
 enum 
 {
@@ -207,20 +207,21 @@ namespace Node
         }binded;// as a pointer ?
         union 
         {
-            struct expression
+            struct
             {
                 Node::node *left,*right;
-                const char*op;
-            }exp;
+                const char *op;
+            }expression ;
 
-            struct variable 
+            struct
             {
                 DT::datatype* type;
                 const char* name; 
                 node* val;
-            }var;
-
-
+            }variable ;
+            std::vector<Node::node*> *VariableList;
+            Node::node* staticSize; // bracket eg. NUMTYPE,3 in int a[3];
+            
         }expVarUnion;
         union 
         {
@@ -278,6 +279,7 @@ struct record
     void parseGlobalKeyword();
     //void parseExressionable_root();
     record * clone(int flags);
+    arrSS* parseArraySS();
 };
 
 namespace DT 
@@ -304,8 +306,17 @@ namespace DT
         const char* typeStr ;
         union 
         {
-            struct node* structNode, *unionNode ;
+            struct node *structNode, *unionNode ;
         };
+        struct array
+        {
+            arrSS* multiDimSizes; // array
+            size_t size; 
+
+            size_t getSizeFromIndex( int index=0);
+            int getTotIndicies(DT::datatype*);
+
+        }array;
         void print(bool isdebug = false);
         void parse(compilation* c);
 
@@ -374,8 +385,5 @@ struct parsePriority {
     std::vector<std::string> operators;
     bool direction;
 };
-
-
-
 
 #endif

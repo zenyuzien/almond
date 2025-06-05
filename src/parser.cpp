@@ -156,47 +156,47 @@ void DT::datatype::parseDatatypeModifiers(compilation* compiler)
 {
     auto tok = compiler->tokenAt();
 
-    ifdpm("\tentered parseMod (100) with token: \n");
+    ifdpm("entered parseMod (100) with token: \n");
     ifdp tok->print(parserDebugger);
     // static const 
-    ifdpm("\tchecking flags for the consecutive mods \n");
+    ifdpm("checking flags for the consecutive mods \n");
     while(tok && tok->type == static_cast<int>(Token::type::KW))
     {
         if( ! DT::isTypeModifier(tok->stringVal) )
             break;
         if( strcmp(tok->stringVal, "signed") == 0 )
         {
-            ifdpm("\tapplied sign \n");
+            ifdpm("applied sign \n");
             setFlag(DT::flag::IS_SIGNED);
         }
         else if(strcmp(tok->stringVal, "unsigned") == 0)
         {
-            ifdpm("\tapplied unsign \n");
+            ifdpm("applied unsign \n");
             unsetFlag(DT::flag::IS_SIGNED);
         }
         else if(strcmp(tok->stringVal, "static") == 0)
         {
-            ifdpm("\tapplied static \n");
+            ifdpm("applied static \n");
             setFlag(DT::flag::IS_STATIC);
         }
         else if(strcmp(tok->stringVal, "const") == 0)
         {
-            ifdpm("\tapplied const \n");
+            ifdpm("applied const \n");
             setFlag(DT::flag::IS_CONST);
         }
         else if(strcmp(tok->stringVal, "extern") == 0)
         {
-            ifdpm("\tapplied extern \n");
+            ifdpm("applied extern \n");
             setFlag(DT::flag::IS_EXTERN);
         }
         else if(strcmp(tok->stringVal, "__ignore_typecheck__") == 0)
         {
-            ifdpm("\tapplied IGNORE_TYPE_CHECKING \n");
+            ifdpm("applied IGNORE_TYPE_CHECKING \n");
             setFlag(DT::flag::IGNORE_TYPE_CHECKING);
         }
 
         tok = compiler->tokenAt(++compiler->tokenPtr);
-        ifdpm("\tchecking next token while also moving ptr, tok: \n");
+        ifdpm("checking next token while also moving ptr, tok: \n");
         ifdp tok->print(parserDebugger);
     }
 }
@@ -229,51 +229,51 @@ void DT::datatype::parserDatatypeInit(compilation* compiler, Token::token* dt1, 
             tmp2->typeStr = tmp1->stringVal;
         if(strcmp(tmp1->stringVal, "void") == 0)
         {
-            ifdp if(flag) parserDebugger << "\tdt2 type void \n"; 
-                else     parserDebugger << "\tdt1 type void \n";
+            ifdp if(flag) parserDebugger << "dt2 type void \n"; 
+                else     parserDebugger << "dt1 type void \n";
             tmp2->type = static_cast<int>(DT::type::void_);
             tmp2->size = 0;
         
         }
         else if(strcmp(tmp1->stringVal, "char") == 0)
         {
-            ifdp if(flag) parserDebugger << "\tdt2 type char \n"; 
-                else     parserDebugger << "\tdt1 type char \n";
+            ifdp if(flag) parserDebugger << "dt2 type char \n"; 
+                else     parserDebugger << "dt1 type char \n";
             tmp2->type = static_cast<int>(DT::type::char_);
             tmp2->size = 1;
         }
         else if(strcmp(tmp1->stringVal, "short") == 0)
         {
-            ifdp if(flag) parserDebugger << "\tdt2 type short \n"; 
-                else     parserDebugger << "\tdt1 type short \n";
+            ifdp if(flag) parserDebugger << "dt2 type short \n"; 
+                else     parserDebugger << "dt1 type short \n";
             tmp2->type = static_cast<int>(DT::type::short_);
             tmp2->size = 2;
         }
         else if(strcmp(tmp1->stringVal, "int") == 0)
         {
-            ifdp if(flag) parserDebugger << "\tdt2 type int \n"; 
-                else     parserDebugger << "\tdt1 type int \n";
+            ifdp if(flag) parserDebugger << "dt2 type int \n"; 
+                else     parserDebugger << "dt1 type int \n";
             tmp2->type = static_cast<int>(DT::type::int_);
             tmp2->size = 4;
         }
         else if(strcmp(tmp1->stringVal, "long") == 0)
         {
-            ifdp if(flag) parserDebugger << "\tdt2 type long \n"; 
-                else     parserDebugger << "\tdt1 type long \n";
+            ifdp if(flag) parserDebugger << "dt2 type long \n"; 
+                else     parserDebugger << "dt1 type long \n";
             tmp2->type = static_cast<int>(DT::type::long_);
             tmp2->size = 4;
         }
         else if(strcmp(tmp1->stringVal, "float") == 0)
         {
-            ifdp if(flag) parserDebugger << "\tdt2 type flt \n"; 
-                else     parserDebugger << "\tdt1 type flt \n";
+            ifdp if(flag) parserDebugger << "dt2 type flt \n"; 
+                else     parserDebugger << "dt1 type flt \n";
             tmp2->type = static_cast<int>(DT::type::void_);
             tmp2->size = 4;
         }
         else if(strcmp(tmp1->stringVal, "double") == 0)
         {
-            ifdp if(flag) parserDebugger << "\tdt2 type dble \n"; 
-                else     parserDebugger << "\tdt1 type dble \n";
+            ifdp if(flag) parserDebugger << "dt2 type dble \n"; 
+                else     parserDebugger << "dt1 type dble \n";
             tmp2->type = static_cast<int>(DT::type::void_);
             tmp2->size = 4;
         }
@@ -291,7 +291,7 @@ void DT::datatype::parserDatatypeInit(compilation* compiler, Token::token* dt1, 
             come_back = true;
             goto recForDt2;
             come_back_here:;
-            ifdpm("\tdt2 attaching to dt1 \n");
+            ifdpm("dt2 attaching to dt1 \n");
             this->size += dtDt2->size;
             this->sec = dtDt2; 
             setFlag(DT::flag::IS_SECONDARY);
@@ -320,7 +320,7 @@ void DT::datatype::parseDatatypeType(compilation* compiler)
     auto dt_tok1 = compiler->tokenAt();
     compiler->tokenPtr++;
     auto dt_tok2 = compiler->tokenAt();
-    ifdpm("\tat parse dt type (010) with tokens: \n");
+    ifdpm("at parse dt type (010) with tokens: \n");
     ifdp if(dt_tok1) dt_tok1->print(parserDebugger);
     ifdp if(dt_tok2) dt_tok2->print(parserDebugger); else parserDebugger<<"No sec token \n";
 
@@ -339,8 +339,16 @@ void DT::datatype::parseDatatypeType(compilation* compiler)
         compiler->tokenPtr++;
     else dt_tok2 = nullptr;
 
-    ifdp if(dt_tok2) parserDebugger << "\tWe got a valid 2nd dt type \n"; 
-        else parserDebugger << "\tWe DIDNOT got a valid 2nd dt type \n";
+    ifdp if(dt_tok2) parserDebugger << "We got a valid 2nd dt type \n"; 
+        else parserDebugger << "We DIDNOT got a valid 2nd dt type \n";
+    if(dt_tok1->type == static_cast<int>(Token::type::KW))
+        if(dt_tok1->stringVal == "float" || dt_tok1->stringVal == "long" || dt_tok1->stringVal == "double" )
+            if(dt_tok2->type == static_cast<int>(Token::type::KW))
+                if(dt_tok2->stringVal == "int")
+                {
+                    parserDebugger << "Ignoring 2nd int as its valueless \n";
+                    dt_tok2 = nullptr;
+                }
 
     int expected_type = static_cast<int>(DT::expect::primitive_) ;
     bool flag = false; // set true in the IF condition itself @details not idiomatic
@@ -350,7 +358,7 @@ void DT::datatype::parseDatatypeType(compilation* compiler)
         expected_type = static_cast<int>(DT::expect::struct_);
     if(flag)
     {
-        ifdpm("\tIts a struct/union, checking name byy checking tokne: \n");
+        ifdpm("Its a struct/union, checking name byy checking tokne: \n");
         auto name = compiler->tokenAt();        // we now have the data of struct or union in expected type so we can store the string in token (id of sttruct/union)
         ifdp name->print(parserDebugger);
         if(name->type == static_cast<int>(Token::type::ID)) compiler->tokenPtr++;
@@ -364,7 +372,7 @@ void DT::datatype::parseDatatypeType(compilation* compiler)
             setFlag(DT::flag::STRUCT_UNION_NO_NAME);
         }
     }
-    ifdpm("\tchecking star count, check token first: \n");
+    ifdpm("checking star count, check token first: \n");
     // int** // struct abc*** // long long ** 
     int starCnt = 0 ;
     auto tok = compiler->tokenAt();
@@ -374,18 +382,18 @@ void DT::datatype::parseDatatypeType(compilation* compiler)
     ( strcmp(tok->stringVal,"*")==0 ))
     {   
         tok = compiler->tokenAt(++compiler->tokenPtr); 
-        ifdpm("\tSTAR++ ");
+        ifdpm("STAR++ ");
         starCnt++;
     }
 
-    ifdp parserDebugger << "\n\tstar cnt: "<< starCnt<< std::endl;
+    ifdp parserDebugger << "\nstar cnt: "<< starCnt<< std::endl;
     parserDatatypeInit(compiler,dt_tok1, dt_tok2,starCnt,expected_type);
 }
 void DT::datatype::parse(compilation* compiler)
 {
     memset(this,0,sizeof(datatype));
     setFlag(DT::flag::IS_SIGNED); // default datatype is generally signed
-    ifdpm("\tentered DT::datatype::parse. Starting series mod-type-mod \n");
+    ifdpm("entered DT::datatype::parse. Starting series mod-type-mod \n");
     // static int const a = 5 ;
     parseDatatypeModifiers(compiler);
     ifdpm("in series mod-type-mod, first mod done \n");
@@ -427,64 +435,110 @@ void DT::datatype::parse(compilation* compiler)
     nodePush(result_node);
 }*/
 
-void DT::datatype::parseVar(compilation* compiler, Token::token* tok, 
+void DT::datatype::parseVar(compilation* compiler, Token::token* name, 
 record* rec)
 {
+    // we anyway stored the token in name, so we can proceed to next token
+    compiler->tokenPtr++;
     ifdp parserDebugger << "entered parseVar with tok: \n" ;
+    auto tok = compiler->tokenAt();
+    if(!tok)
+        return;
     tok->print(parserDebugger); 
     node* val = nullptr; 
     // TODO check for brackets
     if(tok->type== static_cast<int>(Token::type::OP) && !strcmp(tok->stringVal,"=") )
     {
         // parseExpressionable_root
-        tok = compiler->tokenAt(++compiler->tokenPtr);
+        tok = compiler->tokenAt(++compiler->tokenPtr); // value sotred in tok
         ifdp parserDebugger << "dealing with token: \n";
         ifdp tok->print(parserDebugger);
             auto valueNode = new Node::node();
-            valueNode->pushInto(compiler->vecNodes);
             valueNode->type = Node::id_;
-            valueNode->val.stringVal = tok->stringVal; 
-            compiler->tokenPtr++;
+            ifdp parserDebugger<<"valueNode/varNode val: "<< tok->ullVal << std::endl;
+            valueNode->val.ullVal = tok->ullVal; 
+            compiler->tokenPtr++; // token after value
         auto varNode = new Node::node();
-
         varNode->type = Node::var_ ;
-        varNode->expVarUnion.var.name = valueNode->val.stringVal;
-        varNode->expVarUnion.var.type = this ;
-        varNode->expVarUnion.var.val = valueNode;
-    
+        varNode->expVarUnion.variable.name = name->stringVal;
+        varNode->expVarUnion.variable.type = this ;
+        varNode->expVarUnion.variable.val = valueNode;
         // TODO CALC STACK OFFSET
         varNode->pushInto(compiler->vecNodes);
+        ;
     }
 }
 
 void record::parseDeclaration()
 {
     //std::cout<<"pvfsu entry \n";
-    ifdpm("\tentered parseDeclaration to parse potential VFSU \n");
+    ifdpm("entered parseDeclaration to parse potential VFSU \n");
     auto dt = new DT::datatype(); 
     dt->setFlag(DT::flag::IS_SIGNED);
     ifdp hasDatatypeChanged(dt);
     dt->parse(compiler);
     ifdp parserDebugger<<"After parse, here is token currently pointed at: \n";
-    if(compiler->tokenPtr < compiler->vecTokens[0].size())
-    {
-        auto tok = compiler->tokenAt(compiler->tokenPtr);
-        ifdp tok->print(parserDebugger);
+    
+    auto tok = compiler->tokenAt();
+    if(!tok){
+        ifdpm("EOF \n");
+        return ;
+    }
+    ifdp tok->print(parserDebugger);
         // dt here ?
         //std::cout<<"pvfsu exit \n";
-        dt->parseVar(compiler,tok,this);
+    dt->parseVar(compiler,tok,this);
+
+    tok = compiler->tokenAt();
+    if(!tok){
+        ifdpm("EOF \n");
+        return;
     }
+
+    // int a complted
+    // can be a =10 or a[10] or a; simply
+    if(tok->type == static_cast<int>(Token::type::OP) && !strcmp(tok->stringVal,"["))
+    {
+        auto arrss = parseArraySS();
+        dt->array.multiDimSizes = arrss;
+        dt->array.size = dt->array.getSizeFromIndex(0);
+        dt->flags |= static_cast<int>( DT::flag::IS_ARRAY );
+    }
+
+    if(tok->type == static_cast<int>(Token::type::OP) && !strcmp(tok->stringVal,",") )
+    {
+        ifdpm("After parse, found comma, doing multivar node \n");
+        auto varListVec = new std::vector<Node::node*>();
+        Node::node* singleVarNode;
+        do 
+        {
+            compiler->tokenPtr++;
+            singleVarNode = Node::popFrom(compiler->vecNodes);
+            varListVec->push_back(singleVarNode);
+        }
+        while(
+            compiler->tokenAt()->type == static_cast<int>(Token::type::OP) 
+            && tok->charVal == ',' 
+        );
+
+        auto varListNode = new Node::node();
+        varListNode->type = Node::varlist_;
+        varListNode->expVarUnion.VariableList = varListVec;
+        varListNode->pushInto(compiler->vecNodes);
+    }
+    
+    compiler->skipCharOrError(';');
 }
 
 // the function is responsble for parsing Keyword
 void record::parseKw(Token::token* tok)
 {
-    ifdpm("\tentered parseKw with token: \n");
+    ifdpm("entered parseKw with token: \n");
     ifdp tok->print(parserDebugger);
     if( DT::isTypeModifier(tok->stringVal) ||
         DT::isDatatype(tok->stringVal) )
     {
-        ifdpm("\tthe token is a type modifier or datatype, we can expect form of (typeMod)*(datatype)+(typemod)* {* means 0+, + means 1+} \n");
+        ifdpm("the token is a type modifier or datatype, we can expect form of (typeMod)*(datatype)+(typemod)* {* means 0+, + means 1+} \n");
         parseDeclaration();
         return ;
     }
@@ -516,26 +570,26 @@ void Node::node::nodeShiftChildrenLeft()
 {
     //ip num1 * (num2 + num3)
     //op (num1 * num2) + num3
-    if(type != Node::exp_ || (expVarUnion.exp.right->type != Node::exp_))
+    if(type != Node::exp_ || (expVarUnion.expression.right->type != Node::exp_))
     {
         ifdpm("can't shift left: invalid op \n");
         exit(-1);
     }
-    const char* rightOp = expVarUnion.exp.right->expVarUnion.exp.op;
-    Node::node* newLeftchild = expVarUnion.exp.left; 
-    Node::node* new_rightchild = expVarUnion.exp.right->expVarUnion.exp.left; 
+    const char* rightOp = expVarUnion.expression.right->expVarUnion.expression.op;
+    Node::node* newLeftchild = expVarUnion.expression.left; 
+    Node::node* new_rightchild = expVarUnion.expression.right->expVarUnion.expression.left; 
     
     Node::node* newLeftnode = new Node::node();
     newLeftnode->type= Node::exp_ ; 
-    newLeftnode->expVarUnion.exp.left = newLeftchild;
-    newLeftnode->expVarUnion.exp.right = new_rightchild;
-    newLeftnode->expVarUnion.exp.op = expVarUnion.exp.op;
+    newLeftnode->expVarUnion.expression.left = newLeftchild;
+    newLeftnode->expVarUnion.expression.right = new_rightchild;
+    newLeftnode->expVarUnion.expression.op = expVarUnion.expression.op;
 
-    Node::node* new_rightnode = expVarUnion.exp.right->expVarUnion.exp.right;
+    Node::node* new_rightnode = expVarUnion.expression.right->expVarUnion.expression.right;
     
-    expVarUnion.exp.left = newLeftnode;
-    expVarUnion.exp.right = new_rightnode;
-    expVarUnion.exp.op = rightOp;
+    expVarUnion.expression.left = newLeftnode;
+    expVarUnion.expression.right = new_rightnode;
+    expVarUnion.expression.op = rightOp;
 }
 
 void Node::node::reorderExpression(int lev)
@@ -550,8 +604,8 @@ void Node::node::reorderExpression(int lev)
         return;
     }
 
-    auto left = expVarUnion.exp.left;
-    auto right = expVarUnion.exp.right;
+    auto left = expVarUnion.expression.left;
+    auto right = expVarUnion.expression.right;
 
     bool leftIsExp = left && (left->type == Node::exp_);
     bool rightIsExp = right && (right->type == Node::exp_);
@@ -566,7 +620,7 @@ void Node::node::reorderExpression(int lev)
     if (!leftIsExp && rightIsExp) 
     {
         // left op, right op  a*(b+c)
-        if(shouldWeEvalLeft(expVarUnion.exp.op, expVarUnion.exp.right->expVarUnion.exp.op))
+        if(shouldWeEvalLeft(expVarUnion.expression.op, expVarUnion.expression.right->expVarUnion.expression.op))
         {
             gapd(lev);
             ifdpm("Node Shift required \n");  
@@ -574,17 +628,17 @@ void Node::node::reorderExpression(int lev)
             gapd(lev);
             ifdpm("Node after shift: \n");
             printNode(gaper+lev,1);
-            if (expVarUnion.exp.left)
+            if (expVarUnion.expression.left)
             {
                 gapd(lev);
                 ifdpm("left child also calling reorder exp \n");
-                expVarUnion.exp.left->reorderExpression(lev+1);
+                expVarUnion.expression.left->reorderExpression(lev+1);
             } 
-            if (expVarUnion.exp.right)
+            if (expVarUnion.expression.right)
             {
                 gapd(lev);
                 ifdpm("right child also calling reorder exp \n");
-                expVarUnion.exp.right->reorderExpression(lev+1);
+                expVarUnion.expression.right->reorderExpression(lev+1);
             } 
         }
     }
@@ -638,10 +692,10 @@ void record::checkAndMakeExp(Token::token* tok)
     right->printNode(gaper,true);
     auto exp = new Node::node();
     exp->type = Node::exp_ ;
-    //exp->expVarUnion.exp
-    exp->expVarUnion.exp.left = left;
-    exp->expVarUnion.exp.right = right ;
-    exp->expVarUnion.exp.op = op;
+    //exp->expVarUnion.expression
+    exp->expVarUnion.expression.left = left;
+    exp->expVarUnion.expression.right = right ;
+    exp->expVarUnion.expression.op = op;
     exp->reorderExpression();
     exp->pushInto(compiler->vecNodes);
 }
@@ -737,7 +791,7 @@ void record::ParsePotentialExpressions()
 // this function specifically for global scope keywords
 void record::parseGlobalKeyword()
 {
-    ifdpm("\tentered parseGlobalKeyword\n");
+    ifdpm("entered parseGlobalKeyword\n");
     parseKw(compiler->tokenAt(compiler->tokenPtr));
     // at this point we have a node ?
 }
@@ -787,6 +841,8 @@ int parser::parseNextNode()
     return 1;
 }
 
+
+
 // The main function which handles all parsing functionalities
 int parser::parse()
 {
@@ -797,8 +853,11 @@ int parser::parse()
     compiler->tokenPtr=0; // it will point to the next token that is unprocessed
     name_giver = 0;
     sucide = 0;
+
+    compiler->printTokensFromCurPointer(parserDebugger);
     while(parseNextNode())
     {
+        compiler->printTokensFromCurPointer(parserDebugger);
         std::cout<< "Next token : \n";
 
         // commenting to test
@@ -810,6 +869,7 @@ int parser::parse()
         node = compiler->vecNodes[0].back();
         compiler->vecTree->push_back(node);
     }
+    parserDebugger.close();
     return 1;
 }
 void Node::node::pushInto(std::vector<Node::node*>* v)
@@ -839,35 +899,105 @@ void Node::node::printNode(int level, bool isDebug)
         if(type == exp_)
         {
             gapd(level);
-            parserDebugger<<"It is an expression Node with op: "<< expVarUnion.exp.op << std::endl ;
+            parserDebugger<<"It is an expression Node with op: "<< expVarUnion.expression.op << std::endl ;
             gapd(level);
             parserDebugger<< "Left node: \n";
-            expVarUnion.exp.left->printNode(level+1,1);
+            expVarUnion.expression.left->printNode(level+1,1);
             gapd(level);
             parserDebugger<<"right node: \n";
-            expVarUnion.exp.right->printNode(level+1,1);
+            expVarUnion.expression.right->printNode(level+1,1);
         }
         else if(type == number_)
         {
             gapd(level);
             parserDebugger<<"number val: "<< val.ullVal << std::endl;
         }
+        else if(type== var_)
+        {
+            gapd(level);parserDebugger<<"var type, flags: " << flags << " union: \n";
+            gapd(level);parserDebugger<<"var name: "<< expVarUnion.variable.name << " val: "<< expVarUnion.variable.val << std::endl;
+        }
         return ;
     }
     if(type == exp_)
     {
         gap(level);
-        std::cout<<"It is an expression Node with op: "<< expVarUnion.exp.op << std::endl ;
+        std::cout<<"It is an expression Node with op: "<< expVarUnion.expression.op << std::endl ;
         gap(level);
         std::cout<< "Left node: \n";
-        expVarUnion.exp.left->printNode(level+1);
+        expVarUnion.expression.left->printNode(level+1);
         gap(level);
         std::cout<<"right node: \n";
-        expVarUnion.exp.right->printNode(level+1);
+        expVarUnion.expression.right->printNode(level+1);
     }
     else if(type == number_)
     {
         gap(level);
         std::cout<<"number val: "<< val.ullVal << std::endl;
     }
+    else if(type== var_)
+        {
+            gap(level);std::cout<<"var type, flags: " << flags << " union: \n";
+            gap(level);std::cout<<"var name: "<< expVarUnion.variable.name << " val: "<< expVarUnion.variable.val->val.ullVal << std::endl;
+        }
 }
+
+void compilation::skipCharOrError(char c)
+{
+    auto tok = tokenAt();
+    tokenPtr++;
+    if(!tok || tok->type!= static_cast<int>(Token::type::Sym) ||  tok->charVal!= c )
+        genError("Char %c is not allowed \n",c);
+}
+
+size_t DT::datatype::array::getSizeFromIndex(int index)
+{
+    if( index > multiDimSizes->size() ) // char* abc; return abc
+        return size;
+    int ptr = index; 
+    auto sizeNode = multiDimSizes[0][ptr++];
+    if(!sizeNode)
+        return 0;
+    while(sizeNode)
+    {
+        if(sizeNode->type != static_cast<int>(Node::number_) )
+            return 0; 
+        size *= ( sizeNode->expVarUnion.staticSize->val.longVal );
+        sizeNode = multiDimSizes[0][ptr++];
+    }
+    return size;
+}
+int DT::datatype::array::getTotIndicies(DT::datatype* dt)
+{
+    if(dt->flags & static_cast<int>(DT::flag::IS_ARRAY))
+        return dt->array.multiDimSizes[0].size();
+    
+    return -1;
+}
+
+arrSS* record::parseArraySS()
+{
+    auto arss = new arrSS() ;
+    auto tok = compiler->tokenAt(); 
+    while(tok->type == static_cast<int>(Token::type::OP) && !strcmp(tok->stringVal,"[") )
+    {
+        compiler->tokenPtr++; // points to the size now  or it could also be closed brackets directly as it can be sizeless declaration
+        tok =  compiler->tokenAt(); 
+        if(tok->type == static_cast<int>(Token::type::Sym) && tok->charVal == ']')
+        {
+            break;
+        }
+
+        // int a[ 5+(7+8) ]
+        ParsePotentialExpressions();
+        compiler->skipCharOrError(']');
+
+        auto node = Node::popFrom(compiler->vecNodes);
+        auto newNode = new Node::node();
+            newNode->type = Node::bracket_; 
+            newNode->expVarUnion.staticSize = node;
+        arss->push_back(newNode);
+    }
+    return nullptr;
+}
+

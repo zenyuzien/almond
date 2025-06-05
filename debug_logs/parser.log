@@ -1,74 +1,37 @@
 started parsing 
 _____Toks from cur_pointer: 0_________
-Keyword unsigned
 Keyword int
-Operator *
 Identifier a
-Operator =
-Number 10
+Symbol ;
 ______________________________________
   In parse_next() with tok 
-  Keyword unsigned
-  entered parseGlobalKeyword
-  entered parseKw with token: 
-  Keyword unsigned
+  Keyword int
+  entered parseGlobalKeyword   entered parseKw with token:   Keyword int
   the token is a type modifier or datatype, we can expect form of (typeMod)*(datatype)+(typemod)* {* means 0+, + means 1+} 
   entered parseDeclaration to parse potential VFSU 
-  [datatype tracker called] 
-  [datatype tracker] First-time initialization.
   entered DT::datatype::parse. Starting series mod-type-mod 
-  entered parseMod (100) with token: 
-  Keyword unsigned
+  entered parseMod with token:   Keyword int
   checking flags for the consecutive mods 
-  applied unsign 
-  checking next token while also moving ptr, tok: 
-  Keyword int
   in series mod-type-mod, first mod done 
-  _
-[datatype tracker called] 
-[datatype changed] flags       : 1 -> 0
-  [datatype tracker] Updated internal copy.
-_
-  at parse dt type (010) with tokens: 
-  Keyword int
-  Operator *
-  We DIDNOT got a valid 2nd dt type 
-  checking star count, check token first: 
-  Operator *
-  STAR++   
-star cnt: 1
-  in dt init 
-  dt1 type int 
-  in series mod-type-mod, type done 
-  _
-[datatype tracker called] 
-[datatype changed] pdepth      : 0 -> 1
-[datatype changed] type        : 0 -> 3
-[datatype changed] size        : 0 -> 4
-[datatype changed] typeStr     : '(null)' -> 'int'
-  [datatype tracker] Updated internal copy.
-_
-  entered parseMod (100) with token: 
+  at parse dt type with tokens:   Keyword int
   Identifier a
+  We DIDNOT got a valid 2nd dt type 
+  star cnt: 0
+  in dt init   dt1 type int 
+  in series mod-type-mod, type done 
+  entered parseMod with token:   Identifier a
   checking flags for the consecutive mods 
   in series mod-type-mod, second mod done 
-  _
-[datatype tracker called] 
-_
-Finally the dt: 
-  pdepth: 1 type: 3 
-flags: 0000000000000000
-size: 4 
- typeStr: int 
-No secondary: 
+  Finally the dt: 
+  pdepth: 0 type: 3 
+  flags: 0000000000000001
+  size: 4 
+  typeStr: int 
+  No secondary: 
 
-  After parse, here is token currently pointed at: 
-  Identifier a
-  entered parseVar with tok: 
-Operator =
-  dealing with token: 
-  Number 10
-  valueNode/varNode val: 10
-_____Toks from cur_pointer: 6_________
+  DT parse done, parsing var now   Entered parseVar with name: a and currently pointing tok: 
+Symbol ;
+  Expecting semicolong now 
+_____Toks from cur_pointer: 3_________
 ______________________________________
   No more tokens, parsing done ! 

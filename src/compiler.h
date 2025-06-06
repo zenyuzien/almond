@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#define dot std::cout << "."
+
 extern bool LEXER_DEBUG;
 extern std::ofstream lexerDebugger;
 #define ifdl if (LEXER_DEBUG)
@@ -189,14 +191,14 @@ struct node
     int type, flags;
     int rowNo, colNo;
     const char *path;
-    struct nodeBinded
+    /*struct nodeBinded
     {
         node *head = nullptr; // body
         node *func = nullptr; // function
 
         nodeBinded () = default;
         ~nodeBinded () = default;
-    } binded; // as a pointer ?
+    } binded; // as a pointer ?*/
     union
     {
         struct

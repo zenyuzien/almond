@@ -7,8 +7,11 @@
 #include <cstring>
 #include <iostream>
 
+extern std::ofstream parserDebugger;
+
 Token::token* compilation::tokenAt()
 {
+    
     return tokenAt(tokenPtr);
 }
 struct Token::token* compilation::tokenAt(int token_ptr)
@@ -24,7 +27,7 @@ struct Token::token* compilation::tokenAt(int token_ptr)
     }
 
     ifdlm("printing the Token::token in single()\n");
-    ifdl vecTokens[0][tokenPtr]->print();
+    ifdl vecTokens[0][tokenPtr]->print(lexerDebugger);
 
     
     while(tok)
@@ -34,6 +37,7 @@ struct Token::token* compilation::tokenAt(int token_ptr)
           ( tok->type == static_cast<int>(Token::type::Sym) && tok->charVal == '\\' )
         )// check newline comment and // 
            if(token_ptr < (vecTokens[0].size()-1)){
+                tokenPtr++;
                 tok = vecTokens[0][++token_ptr]; 
                 ifdlm("INC PTR++ \n");
            }
@@ -44,9 +48,17 @@ struct Token::token* compilation::tokenAt(int token_ptr)
     // peek next end
     return tok;
 }
-
+void
+compilation::skipCharOrError (char c)
+{
+    auto tok = tokenAt ();
+    tokenPtr++;
+    if (!tok || tok->type != static_cast<int> (Token::type::Sym) || tok->charVal != c)
+        genError ("Char %c is not allowed \n", c);
+}
 void compilation::genError(const char* msg, ...)
 {
+    parserDebugger.close();
     va_list args;
     va_start(args, msg);
     vfprintf(stderr, msg, args);
@@ -92,12 +104,11 @@ int compilation::compileFile
     if(!lex_process || (!lex_process->lex()))
         return 0;
     
-            std::cout<< "size: " <<(*vecTokens).size() << std::endl;
+            ifdl lexerDebugger<< "\n\nSummary: Token count is " <<(*vecTokens).size() << std::endl;
             for(auto x : (*vecTokens))
-                x->print();
-            
+                ifdl x->print(lexerDebugger);
 
-    std::cout<<"Lexed successfully ! \n";
+    std::cout<<"\nLexed successfully ! \n";
     lexerDebugger.close();
     // parsing 
     
@@ -111,16 +122,16 @@ int compilation::compileFile
     if(parse_process->parse() != 1)
         return 0;
     
-    std::cout<< "Parsing success \n";
+    std::cout<< "\nParsed successfully !\n\n";
 
     std::cout<< "Nodes summary: size: "<< vecNodes[0].size()<<std::endl;
     for(auto x : vecNodes[0])
     {
         std::cout<<"_________________________\n";
         x->printNode(0);
-        std::cout<<"_________________________\n";
         
     }
+        std::cout<<"_________________________\n";
 
 
     // code gen

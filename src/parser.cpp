@@ -4,7 +4,7 @@
 #include <iostream>
 #include <memory.h>
 
-static int gaper;
+int gaper;
 
 extern bool PARSER_DEBUG;
 extern std::ofstream parserDebugger;
@@ -80,21 +80,6 @@ DT::hasDatatypeChanged (struct datatype *current)
     return changed;
 }
 
-// This structure stores the priority table of all operators in C
-const std::vector<parsePriority> opPrecedence = { { { "++", "--", "()", "[]", "(", "[", ".", "->" }, leftToRight },
-                                                  { { "*", "/", "%" }, leftToRight },
-                                                  { { "+", "-" }, leftToRight },
-                                                  { { "<<", ">>" }, leftToRight },
-                                                  { { "<", "<=", ">", ">=" }, leftToRight },
-                                                  { { "==", "!=" }, leftToRight },
-                                                  { { "&" }, leftToRight },
-                                                  { { "^" }, leftToRight },
-                                                  { { "|" }, leftToRight },
-                                                  { { "&&" }, leftToRight },
-                                                  { { "||" }, leftToRight },
-                                                  { { "?", ":" }, rightToLeft },
-                                                  { { "=", "+=", "-=", "*=", "/=", "%=", "<<=", ">>=", "&=", "^=", "|=" }, rightToLeft },
-                                                  { { "," }, leftToRight } };
 
 bool
 DT::isDatatype (const char *str)
@@ -137,7 +122,7 @@ DT::datatype::print (bool isdebug)
             if (sec != nullptr)
                 {
                     ifdp parserDebugger << "secondary: \n\n";
-                    sec->print ();
+                    sec->print (isdebug);
                 }
             else
                 ifdp parserDebugger << "No secondary: \n\n";
@@ -306,7 +291,7 @@ DT::datatype::parserDatatypeInit (compilation *compiler, Token::token *dt1, Toke
         compiler->genError ("FATAL ERROR: unnsuported datatyp exp \n");
 
     // this->typeStr = dt1->stringVal; moving to switch blocks
-    if ((strcmp (dt1->stringVal, "long") == 0) && (strcmp (dt2->stringVal, "long") == 0))
+    if ((strcmp (dt1->stringVal, "long") == 0) && dt2 && (strcmp (dt2->stringVal, "long") == 0))
         compiler->genError ("64bits unsupported for now \n");
 }
 
@@ -334,9 +319,11 @@ DT::datatype::parseDatatypeType (compilation *compiler)
     ifdp if (dt_tok2) parserDebugger << "We got a valid 2nd dt type \n";
     else parserDebugger << "We DIDNOT got a valid 2nd dt type \n";
     if (dt_tok1->type == static_cast<int> (Token::type::KW))
-        if (dt_tok1->stringVal == "float" || dt_tok1->stringVal == "long" || dt_tok1->stringVal == "double")
+        if (strcmp(dt_tok1->stringVal, "float") == 0 ||
+            strcmp(dt_tok1->stringVal, "long") == 0  ||
+            strcmp(dt_tok1->stringVal, "double") == 0)
             if (dt_tok2->type == static_cast<int> (Token::type::KW))
-                if (dt_tok2->stringVal == "int")
+                if ( !strcmp(dt_tok2->stringVal,"int"))
                     {
                         parserDebugger << "Ignoring 2nd int as its valueless \n";
                         dt_tok2 = nullptr;
@@ -412,7 +399,7 @@ DT::datatype::parse (compilation *compiler)
         // parserDebugger<<"_\n";
         // hasDatatypeChanged(this);
         parserDebugger << "Finally the dt: \n";
-        print (1);
+        print(1);
     }
 }
 
@@ -429,7 +416,7 @@ DT::datatype::parseVar (compilation *compiler, Token::token *name, record *rec)
     // we anyway stored the token in name, so we can proceed to next token
     compiler->tokenPtr++;
     ifdp parserDebugger << "Entered parseVar with name: " << name->stringVal << " and currently pointing tok: \n";
-    auto tok = compiler->tokenAt ();
+    auto tok = compiler->tokenAt () ;
     if (!tok)
         return;
     tok->print (parserDebugger);
@@ -438,8 +425,11 @@ DT::datatype::parseVar (compilation *compiler, Token::token *name, record *rec)
     Node::node *valueNode = nullptr;
     if (tok->type == static_cast<int> (Token::type::OP) && !strcmp (tok->stringVal, "="))
         {
+            ifdpm("= found, so parsing potential expressions now \n");
+            compiler->tokenPtr++;
             rec->ParsePotentialExpressions ();
             valueNode = Node::popFrom (compiler->vecNodes);
+            ifdp parserDebugger << "NODE POPPED with type: " << valueNode->type << std::endl;
             /*// parseExpressionable_root
             tok = compiler->tokenAt(++compiler->tokenPtr); // value sotred in tok
             ifdp parserDebugger << "dealing with token: ";
@@ -456,12 +446,14 @@ DT::datatype::parseVar (compilation *compiler, Token::token *name, record *rec)
     varNode->expVarUnion.variable.type = this;
     varNode->expVarUnion.variable.val = valueNode;
     // TODO CALC STACK OFFSET
+    ifdp parserDebugger << "VARIABLE NODE INSERTED with val "<< name->stringVal <<"\n";
     varNode->pushInto (compiler->vecNodes);
 }
 
 void
 record::parseDeclaration ()
 {
+
     // std::cout<<"pvfsu entry \n";
     ifdpm ("entered parseDeclaration to parse potential VFSU \n");
     auto dt = new DT::datatype ();
@@ -481,6 +473,7 @@ record::parseDeclaration ()
         }
 
     dt->parseVar (compiler, tok, this);
+    ifdpm("After parseVar variable node in vecNodes now \n");
 
     tok = compiler->tokenAt ();
     if (!tok)
@@ -489,37 +482,41 @@ record::parseDeclaration ()
             return;
         }
 
-    // int a complted
+    // int a compltedparseVar
     // can be a =10 or a[10] or a; simply
     if (tok->type == static_cast<int> (Token::type::OP) && !strcmp (tok->stringVal, "["))
         {
+            ifdpm("[ got, so parsing static sizes of the array : ");
             auto arrss = parseArraySS ();
+            ifdpm("after parseaass tok : ");
+            ifdp tok->print(parserDebugger);
             dt->array.multiDimSizes = arrss;
-            dt->array.size = dt->array.getSizeFromIndex (0);
+            dt->array.size = dt->array.getSizeFromIndex(0);
             dt->flags |= static_cast<int> (DT::flag::IS_ARRAY);
         }
 
     if (tok->type == static_cast<int> (Token::type::OP) && !strcmp (tok->stringVal, ","))
         {
-            ifdpm ("After parse, found comma, doing multivar node \n");
+            ifdpm ("found comma, doing multivar node \n");
             auto varListVec = new std::vector<Node::node *> ();
             Node::node *singleVarNode;
             do
                 {
                     compiler->tokenPtr++;
                     singleVarNode = Node::popFrom (compiler->vecNodes);
+                    ifdp parserDebugger << "NODE POPPED with type: " << singleVarNode->type << std::endl;
                     varListVec->push_back (singleVarNode);
                 }
             while (compiler->tokenAt ()->type == static_cast<int> (Token::type::OP) && tok->charVal == ',');
-
             auto varListNode = new Node::node ();
             varListNode->type = Node::varlist_;
             varListNode->expVarUnion.VariableList = varListVec;
+            ifdp parserDebugger << "VARLIST NODE INSERTED \n";
             varListNode->pushInto (compiler->vecNodes);
         }
 
     ifdpm ("Expecting semicolong now \n");
-    compiler->skipCharOrError (';');
+    compiler->skipCharOrError(';');
 }
 
 // the function is responsble for parsing Keyword
@@ -537,108 +534,6 @@ record::parseKw (Token::token *tok)
     std::cout << "parsing kw exit1 \n";
 }
 
-int
-getPriorityFor (const char *op)
-{
-    for (int i = 0; i < opPrecedence.size (); i++)
-        for (auto j : opPrecedence[i].operators)
-            if (op == j)
-                return i;
-    return -1;
-}
-bool
-shouldWeEvalLeft (const char *left, const char *right)
-{
-    if (left == right)
-        return false;
-    int left_rank = getPriorityFor (left);
-    int right_rank = getPriorityFor (right);
-
-    if (opPrecedence[left_rank].direction == rightToLeft)
-        return false;
-
-    return left_rank <= right_rank;
-}
-
-void
-Node::node::nodeShiftChildrenLeft ()
-{
-    // ip num1 * (num2 + num3)
-    // op (num1 * num2) + num3
-    if (type != Node::exp_ || (expVarUnion.expression.right->type != Node::exp_))
-        {
-            ifdpm ("can't shift left: invalid op \n");
-            exit (-1);
-        }
-    const char *rightOp = expVarUnion.expression.right->expVarUnion.expression.op;
-    Node::node *newLeftchild = expVarUnion.expression.left;
-    Node::node *new_rightchild = expVarUnion.expression.right->expVarUnion.expression.left;
-
-    Node::node *newLeftnode = new Node::node ();
-    newLeftnode->type = Node::exp_;
-    newLeftnode->expVarUnion.expression.left = newLeftchild;
-    newLeftnode->expVarUnion.expression.right = new_rightchild;
-    newLeftnode->expVarUnion.expression.op = expVarUnion.expression.op;
-
-    Node::node *new_rightnode = expVarUnion.expression.right->expVarUnion.expression.right;
-
-    expVarUnion.expression.left = newLeftnode;
-    expVarUnion.expression.right = new_rightnode;
-    expVarUnion.expression.op = rightOp;
-}
-
-void
-Node::node::reorderExpression (int lev)
-{
-    gapd (lev);
-    ifdpm ("called reorder exp \n");
-    // check if node is exp, and check if there's an exp in atleast one child
-    if (type != Node::exp_)
-        {
-            gapd (lev);
-            ifdpm ("it is not exp, returning \n");
-            return;
-        }
-
-    auto left = expVarUnion.expression.left;
-    auto right = expVarUnion.expression.right;
-
-    bool leftIsExp = left && (left->type == Node::exp_);
-    bool rightIsExp = right && (right->type == Node::exp_);
-
-    if (!leftIsExp && !rightIsExp)
-        {
-            gapd (lev);
-            ifdpm ("no child is exp, so returning \n");
-            return;
-        }
-
-    if (!leftIsExp && rightIsExp)
-        {
-            // left op, right op  a*(b+c)
-            if (shouldWeEvalLeft (expVarUnion.expression.op, expVarUnion.expression.right->expVarUnion.expression.op))
-                {
-                    gapd (lev);
-                    ifdpm ("Node Shift required \n");
-                    nodeShiftChildrenLeft ();
-                    gapd (lev);
-                    ifdpm ("Node after shift: \n");
-                    printNode (gaper + lev, 1);
-                    if (expVarUnion.expression.left)
-                        {
-                            gapd (lev);
-                            ifdpm ("left child also calling reorder exp \n");
-                            expVarUnion.expression.left->reorderExpression (lev + 1);
-                        }
-                    if (expVarUnion.expression.right)
-                        {
-                            gapd (lev);
-                            ifdpm ("right child also calling reorder exp \n");
-                            expVarUnion.expression.right->reorderExpression (lev + 1);
-                        }
-                }
-        }
-}
 
 record *
 record::clone (int flags)
@@ -650,6 +545,7 @@ void
 record::parseExpressionableForOp (const char *op)
 {
     ifdpm ("in parseexpressionableforop() \n");
+
     ParsePotentialExpressions ();
 }
 void
@@ -659,12 +555,17 @@ record::checkAndMakeExp (Token::token *tok)
     const char *op = tok->stringVal;
     Node::node *left;
     if (compiler->vecNodes[0].size ())
-        left = compiler->vecNodes[0].back ();
+        left = compiler->vecNodes[0].back();
+    if(!left)
+    {
+        std::cout<<"FATAL ERROR MAYBE \n";
+        return ;
+    }
     switch (left->type)
         {
         // the IS_EXPRESSION_ABLE means the node can be part of an expression - a number, another expression, a variable
         IS_EXPRESSION_ABLE:
-            ifdpm ("left node is an expression element!\n");
+            ifdpm ("left node is a valid expression param\n");
             left->printNode (gaper, true);
             break;
         default:
@@ -676,11 +577,13 @@ record::checkAndMakeExp (Token::token *tok)
     ifdpm ("token pointer moved forward \n");
     compiler->tokenPtr++;
     Node::popFrom (compiler->vecNodes);
+    ifdp parserDebugger << "NODE POPPED with type "<< left->type<< std::endl;
     left->flags |= NODE_FLAG_INSIDE_EXPRESSION;
 
     auto rec1 = this->clone (this->flags);
     rec1->parseExpressionableForOp (op);
     Node::node *right = Node::popFrom (compiler->vecNodes);
+    ifdp parserDebugger << "NODE POPPED with type: " << right->type << std::endl;
     if (right)
         right->flags |= NODE_FLAG_INSIDE_EXPRESSION;
     else
@@ -697,6 +600,7 @@ record::checkAndMakeExp (Token::token *tok)
     exp->expVarUnion.expression.right = right;
     exp->expVarUnion.expression.op = op;
     exp->reorderExpression ();
+    ifdp parserDebugger << "EXP NODE INSERTED \n";
     exp->pushInto (compiler->vecNodes);
 }
 
@@ -705,6 +609,7 @@ record::checkAndMakeExp (Token::token *tok)
 int
 record::dealWithOp (Token::token *tok)
 {
+
     ifdpm ("Dealing with Op \n");
     // for binary operations which have left and right operands, we check and make an expression node
     checkAndMakeExp (tok);
@@ -731,12 +636,17 @@ record::makeOneNode ()
         // token is a number, make a node out of it
         case static_cast<int> (Token::type::Num):
             n = new Node::node ();
+            ifdp parserDebugger << "NUMBER NODE INSERTED with val "<< tok->ullVal <<"\n";
             n->pushInto (compiler->vecNodes);
             ifdpm ("number node made and pusehd to vecNodes \n");
             n->type = Node::number_;
             n->val.ullVal = tok->ullVal;
             ifdpm ("token pointer moved forward 1 position \n");
-            compiler->tokenPtr++;
+            std::cout<<"\n\n-> "<< compiler->tokenPtr << ": "; 
+            compiler->tokenAt()->print();
+            compiler->tokenPtr = compiler->tokenPtr+1;
+            std::cout<<"-> "<< compiler->tokenPtr << ": "; 
+            compiler->tokenAt()->print();
             res = 1;
             break;
 
@@ -744,6 +654,7 @@ record::makeOneNode ()
         case static_cast<int> (Token::type::ID):
             // parse identifier
             n = new Node::node ();
+            ifdp parserDebugger << "ID NODE INSERTED with val "<< tok->stringVal <<"\n";
             n->pushInto (compiler->vecNodes);
             ifdpm ("Identifier node made and pusehd to vecNodes \n");
             n->type = Node::id_;
@@ -764,8 +675,9 @@ record::makeOneNode ()
             break;
 
         default:
-            std::cout << "not handled this yet! \n";
-            exit (-1);
+            //std::cout << "not handled this yet! \n";
+            ifdpm("semicolon got in makeonenode so returning 0 \n");
+            res = 0;
             break;
         }
 
@@ -779,8 +691,8 @@ record::makeOneNode ()
 void
 record::ParsePotentialExpressions ()
 {
-    ifdpm ("In Parsing potential Expressions.. \n");
 
+    ifdpm ("In Parsing potential Expressions.. \n");
     // tokens are read, as long as they get along with the expression, reads.
     // for example a+(b+c(...))
     gaper++;
@@ -838,6 +750,14 @@ parser::parseNextNode ()
             break;
 
         default:
+            if(tok->type ==  static_cast<int>(Token::type::Sym) )
+                if(tok->charVal == ';')
+                {
+                    ifdpm("; to exit parsenextnode with 1\n");
+                    compiler->tokenPtr++;
+                    gaper--;
+                    return 1;
+                }
             compiler->genError ("this token cant be conv to node (or for now) \n");
             break;
         }
@@ -861,7 +781,7 @@ parser::parse ()
     while (parseNextNode ())
         {
             compiler->printTokensFromCurPointer (parserDebugger);
-            std::cout << "Next token : \n";
+            //std::cout << "Next token : \n";
 
             // commenting to test
             if (!compiler->vecNodes[0].size ())
@@ -875,97 +795,11 @@ parser::parse ()
     parserDebugger.close ();
     return 1;
 }
-void
-Node::node::pushInto (std::vector<Node::node *> *v)
-{
-    v->push_back (this);
-}
-Node::node *
-Node::topOf (std::vector<Node::node *> *v)
-{
-    if (v->size ())
-        return v->back ();
-    return nullptr;
-}
-Node::node *
-Node::popFrom (std::vector<Node::node *> *v)
-{
-    if (v->size ())
-        {
-            auto x = v->back ();
-            v->pop_back ();
-            return x;
-        }
-    return nullptr;
-}
-void
-Node::node::printNode (int level, bool isDebug)
-{
-    if (isDebug)
-        {
-            if (type == exp_)
-                {
-                    gapd (level);
-                    parserDebugger << "It is an expression Node with op: " << expVarUnion.expression.op << std::endl;
-                    gapd (level);
-                    parserDebugger << "Left node: \n";
-                    expVarUnion.expression.left->printNode (level + 1, 1);
-                    gapd (level);
-                    parserDebugger << "right node: \n";
-                    expVarUnion.expression.right->printNode (level + 1, 1);
-                }
-            else if (type == number_)
-                {
-                    gapd (level);
-                    parserDebugger << "number val: " << val.ullVal << std::endl;
-                }
-            else if (type == var_)
-                {
-                    gapd (level);
-                    parserDebugger << "var type, flags: " << flags << " union: \n";
-                    gapd (level);
-                    parserDebugger << "var name: " << expVarUnion.variable.name << " val: " << expVarUnion.variable.val << std::endl;
-                }
-            return;
-        }
-    if (type == exp_)
-        {
-            gap (level);
-            std::cout << "It is an expression Node with op: " << expVarUnion.expression.op << std::endl;
-            gap (level);
-            std::cout << "Left node: \n";
-            expVarUnion.expression.left->printNode (level + 1);
-            gap (level);
-            std::cout << "right node: \n";
-            expVarUnion.expression.right->printNode (level + 1);
-        }
-    else if (type == number_)
-        {
-            gap (level);
-            std::cout << "number val: " << val.ullVal << std::endl;
-        }
-    else if (type == var_)
-        {
-            gap (level);
-            std::cout << "var type, flags: " << flags << " union: \n";
-            gap (level);
-            std::cout << "var name: " << expVarUnion.variable.name << "\n"; // << " val: " << expVarUnion.variable.val->val.ullVal << std::endl;
-        }
-}
-
-void
-compilation::skipCharOrError (char c)
-{
-    auto tok = tokenAt ();
-    tokenPtr++;
-    if (!tok || tok->type != static_cast<int> (Token::type::Sym) || tok->charVal != c)
-        genError ("Char %c is not allowed \n", c);
-}
 
 size_t
 DT::datatype::array::getSizeFromIndex (int index)
 {
-    if (index > multiDimSizes->size ()) // char* abc; return abc
+    if (index > multiDimSizes[0].size ()) // char* abc; return abc
         return size;
     int ptr = index;
     auto sizeNode = multiDimSizes[0][ptr++];
@@ -992,26 +826,38 @@ DT::datatype::array::getTotIndicies (DT::datatype *dt)
 arrSS *
 record::parseArraySS ()
 {
+    ifdpm("Got [ so Enterred parseArraySS \n");
     auto arss = new arrSS ();
     auto tok = compiler->tokenAt ();
     while (tok->type == static_cast<int> (Token::type::OP) && !strcmp (tok->stringVal, "["))
         {
+
+            ifdpm("pointing to [ ");
             compiler->tokenPtr++; // points to the size now  or it could also be closed brackets directly as it can be sizeless declaration
             tok = compiler->tokenAt ();
             if (tok->type == static_cast<int> (Token::type::Sym) && tok->charVal == ']')
                 {
+                    ifdpm("then pointing to ], so exit with pointer forward after ] \n");
+                    compiler->tokenPtr++;
                     break;
                 }
+            ifdpm("got exp content so parsepotential exp \n");
 
             // int a[ 5+(7+8) ]
             ParsePotentialExpressions ();
             compiler->skipCharOrError (']');
 
+            ifdpm("skipped ] after parse exp content, tok now: ");
+            tok = compiler->tokenAt(); 
+            ifdp tok->print(parserDebugger);
+
             auto node = Node::popFrom (compiler->vecNodes);
+            ifdp parserDebugger << "NODE POPPED with type: " << node->type << std::endl;
             auto newNode = new Node::node ();
             newNode->type = Node::bracket_;
             newNode->expVarUnion.staticSize = node;
-            arss->push_back (newNode);
+            
+            arss[0].push_back (newNode);
         }
-    return nullptr;
+    return arss;
 }

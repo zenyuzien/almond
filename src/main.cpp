@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     auto c = new compilation();
     int res = c->compileFile("/home/zenyuzien/Downloads/almond/almond/test.c", "/home/zenyuzien/Downloads/almond/almond/test.asm", 0);
     if (res == 1) {
-        std::cout << "Compiled succesfully! \n";
+        std::cout << "\nCompiled succesfully! \n";
     } else if (res == 0) {
         std::cout << "Comp failed ! \n";
     } else {

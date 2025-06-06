@@ -2,6 +2,9 @@ started parsing
 _____Toks from cur_pointer: 0_________
 Keyword int
 Identifier a
+Operator [
+Number 5
+Symbol ]
 Symbol ;
 ______________________________________
   In parse_next() with tok 
@@ -30,8 +33,24 @@ ______________________________________
   No secondary: 
 
   DT parse done, parsing var now   Entered parseVar with name: a and currently pointing tok: 
-Symbol ;
+Operator [
+  VARIABLE NODE INSERTED with val a
+  After parseVar variable node in vecNodes now 
+  [ got, so parsing static sizes of the array :   Got [ so Enterred parseArraySS 
+  pointing to [   got exp content so parsepotential exp 
+  In Parsing potential Expressions.. 
+    entered makeOneNode with token     Number 5
+    NUMBER NODE INSERTED with val 5
+    number node made and pusehd to vecNodes 
+    token pointer moved forward 1 position 
+    returning from MakeOneNode:     1
+    entered makeOneNode with token     Symbol ]
+    semicolon got in makeonenode so returning 0 
+    returning from MakeOneNode:     0
+  skipped ] after parse exp content, tok now:   Symbol ;
+  NODE POPPED with type: 2
+  after parseaass tok :   Operator [
   Expecting semicolong now 
-_____Toks from cur_pointer: 3_________
+_____Toks from cur_pointer: 6_________
 ______________________________________
   No more tokens, parsing done ! 

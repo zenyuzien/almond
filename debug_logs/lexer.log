@@ -1,0 +1,44 @@
+***LEXER STARTED***
+Getting next Token 
+Switch --> i
+	Token to be returned : 
+Keyword int
+Getting next Token 
+Switch -->  
+Getting next Token 
+Switch --> a
+	Token to be returned : 
+Identifier a
+Getting next Token 
+Switch --> [
+	Token to be returned : 
+Operator [
+Getting next Token 
+Switch --> 5
+Got Number 5 with numTYpe: 0
+	Token to be returned : 
+Number 5
+Getting next Token 
+Switch --> ]
+In Symbol case with ]
+token symbol: ]
+	Token to be returned : 
+Symbol ]
+Getting next Token 
+Switch --> ;
+In Symbol case with ;
+token symbol: ;
+	Token to be returned : 
+Symbol ;
+Getting next Token 
+EOF case 
+***LEXER ENDED***
+
+
+Summary: Token count is 6
+Keyword int
+Identifier a
+Operator [
+Number 5
+Symbol ]
+Symbol ;

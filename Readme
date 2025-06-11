@@ -1,17 +1,2 @@
-This project is intended to be the first compiler prototype for targetting 
-the Custom ISA of the AI processor project.
-
-At the time of starting this project, the ISA spec is not formally on paper yet.
-Consequently, the project will target x86 
-
-For the front-end, a subset of C programming language is being parsed. 
-So in short, this project is a generic prototype for 
-C -> x86, being written in basic Cpp
-
-roughly 3 phases for the prototype:
-1. Lexer
-2. Parser
-3. Codegen - x86 
-
-The current phase as of June '25 is in 'Parsing'
-The expected time to finish the prototype is early August.
+This project is intended to be the first compiler prototype for the processor.
+Currently in parsing stage.

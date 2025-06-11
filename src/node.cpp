@@ -89,7 +89,7 @@ Node::popFrom (std::vector<Node::node *> *v)
         }
     return nullptr;
 }
-
+std::string printNodeUtility(Node::node*);
 std::string printNodeUtilityDT(DT::datatype* dt)
 {
     std::string result ; 
@@ -117,6 +117,12 @@ std::string printNodeUtilityDT(DT::datatype* dt)
             result += '*';
         result += " ";
     }
+    if( dt->array.multiDimSizes )
+    {
+        auto dims = dt->array.multiDimSizes[0];
+        for(auto n : dims)
+            result = result + "[" + printNodeUtility(n) + "] ";
+    }
     return result;
 }
 
@@ -128,11 +134,18 @@ std::string printNodeUtility(Node::node* exp)
 
     switch (exp->type)
     {
+        case Node::bracket_:
+            return printNodeUtility(exp->expVarUnion.staticSize);
+        break;
+
         case Node::var_:
             tmp += printNodeUtilityDT(exp->expVarUnion.variable.type);
             tmp += exp->expVarUnion.variable.name;
-            tmp += " = " ;
-            tmp += printNodeUtility(exp->expVarUnion.variable.val);
+            if(exp->expVarUnion.variable.val)
+            {
+                tmp += " = " ;
+                tmp += printNodeUtility(exp->expVarUnion.variable.val);
+            }
         break;
 
         case Node::exp_:
@@ -285,4 +298,27 @@ Node::node::reorderExpression (int lev)
                         }
                 }
         }
+}
+
+size_t Node::node::varSize()// for type var_
+{
+    if(type == Node::var_)
+        return expVarUnion.variable.type->dtSize();
+    return 0;
+}   
+size_t Node::node::varListSize() // for type varlist_
+{
+    if(type == Node::varlist_ )
+    {
+        size_t totSize = 0 ; 
+        int ptr = 0 ;
+        auto varNode = expVarUnion.VariableList[0][ptr++];
+        while(varNode)
+        {
+            totSize += varNode->varSize();
+            varNode = expVarUnion.VariableList[0][ptr++];
+        }
+        return totSize;
+    }
+    return 0;
 }

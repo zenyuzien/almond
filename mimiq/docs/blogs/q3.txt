@@ -1,0 +1,56 @@
+In the last 2 blogs, we worked on understanding 2 statements
+-> measurement collapses wave function of a quantum particle
+-> superposition of a quantum particle refers to the
+   ability of the particle to be able to be measured/collapsed differently ( different points in the curvy line) 
+   based on the probabilities that can be calculated from the particle's wavefunction
+
+Now we need to stop quantum theory for a while, lets come back to logic for a while.
+Any number in computing is stored as zeroes and ones. 
+If I have to be more explicit, semiconductors with electricity simulate zeroes and ones, 
+but in the end, everything is a function between zeroes and ones in today's society.
+the lowest level of computing comes from LOGIC GATES 
+0 AND 0 = 0  ; 0 OR  0 = 0 ; 0 XOR 0 = 1  
+0 AND 1 = 0  ; 0 XOR 1 = 1 ; O OR  1 = 1 
+1 AND 1 = 1  ; 1 XOR 1 = 0 ; 1 OR  1 = 1
+
+But there are limitations with classical computing
+(classical computing refers to computing as discussed above - zeroes and ones by semiconductors )
+Why am I talking like there is other way of computing ?
+Is there other ways ? 
+
+Well some people in the past discovered that superposition can be used in computation.
+Well, that's some quantum computing xD.
+
+Just like how an ejected particle as wave has superposition as we discussed in previous blog,
+
+a particle also exhibits superposition in one more aspect - SPIN. 
+an electron can be in a superposition of spin-up and spin-down. 
+A photon can be in a superposition of vertical vibration or horizontal vibration. 
+    ( geeks would argue that its not vertical or horizontal vibration, but its polarization and it can be multiple more directions
+      but hey, what I said is much better is not wrong, a photon can be in such superposition )
+A tiny atom/ion can be in a superposition of high state or low state. 
+
+eg. an electron spins... but until you measure, you can't tell which way it does.
+    But we can predict using the electron's wavefunction.
+    Yes. Electron is a quantum particle so we associate it with a wavefunction, 
+    and that tells us the probabilities of each spin when measured.
+
+In a nutshell, every entity discussed above can be in a superposition of 2 opposite "states" 
+    be it up/down, vertical/horizontal , high/low 
+    I see as 0/1 
+
+These entities are now almsot like bits 0 or 1 .
+but they are called Qubits. They are 0 and/or 1 .
+I hope you are not confused why I used the word and now. 
+
+I conclude this blog with the statement :
+-> A qubit is a quantum particle which can be in a superposition of 2 opposite states. 
+
+If everything is well understand so far,
+I could finally say this- 
+
+.
+.
+.
+
+Welcome to Quantum computing.

@@ -1,0 +1,45 @@
+
+The conclusion from the last blog:
+-> A qubit is a quantum particle which can be in a superposition of 2 opposite states.
+
+I will now formally introduce the term 'quantum state' now 
+It is basically the physcial presence of qubit itself. Presence of a quantum particle itself. 
+EVERY QUANTUM PARTICLE IS IN A QUANTUM STATE.
+But, 
+It can't be useful by itself alone, but useful when comparing with a special kind of states. 
+
+Base state: A base state is a 'reference' state from which other states can be represented. 
+            They GENERALLY are the particle-mode states. Which means, not in superposition but one normal position.
+            I mean, the states that wave functions are usually collapsed into. The points in curvy line. 
+            The 0/1 's. 
+
+for an electron, if we assume spin-down and spin-up as base states, 
+spin-down is not a superposition - it is just a single position of spining down only. 
+Here spinning is "position-type"
+
+the concept is same, just different scenarios.
+
+then if the electron is in a superposition of the 2 states, 
+We say that it is in 'superposition' state. It's straightforward!
+
+It is kind of like 
+
+state(electron) : {probability1 * state(base state1 )}  + {probability2 * state(base state2 )}
+if we relate this to our previous examples
+
+superposition = chance of measuring spin-up + chance of measuring spin-down 
+how much chance ? 50-50 ? 70-30 ?
+IT DEPENDS ON WAVE-FUNCTION. 
+revision: "probability of position" ( from blog1 ) here position refers to the state. 
+A point on the curvy line is a state. 
+
+This is a critical area folks, I will explain more ellaboritively about it, 
+
+Lets walkthrough the previous conclusions once again, now extending our understanding
+
+-> measurement collapses wave function of a quantum particle
+
+A quantum particle would initially be in some quantum state. When we measure it
+    if before measuring, it is already in a base-state, the measurement would no nothing 
+    because it is not in superposition, 
+

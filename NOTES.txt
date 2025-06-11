@@ -1,0 +1,8 @@
+1. don't do multi variable declaraion
+    eg. int* a, *b, c[3][3]                 NOT ALLOWED
+    eg. int * a; int *b ; int c [3][3]          ALLOWED
+
+2. can't have pointers on type modifier ( different positions) , only supports pointers right of datatype 
+    eg. int* const *a                       NOT ALLOWED
+    eg. long int ** const a;                    ALLOWED 
+    

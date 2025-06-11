@@ -112,7 +112,7 @@ int compilation::compileFile
     lexerDebugger.close();
     // parsing 
     
-    
+    parserActiveBody = nullptr;
     auto parse_process = new parser();
     parse_process->compiler = this;
     vecNodes = new std::vector<Node::node*>();
@@ -149,8 +149,7 @@ lexer* compilation::sandbox(std::string& custom)
         return NULL;
     return lexp;
 }*/
-
-scope* compilation::rootScopeCreate(bool create) // 1 create, 0 free
+scope* compilation::rootScopeCreateFree(bool create) // 1 create, 0 free
     {
         if(create)
         {
@@ -303,4 +302,46 @@ void compilation::printTokensFromCurPointer(std::ofstream& wr)
     for(int i = tokenPtr ; i < vecTokens[0].size(); i++ )
         vecTokens[0][i]->print(wr);
     wr << "______________________________________\n";
+}
+int padding(int val, int to)
+{
+    if(( to <=0 ) || !(val%to) ) // reduncant TODO
+        return 0;
+    return to - (val%to) % to ;
+}
+int align(int val, int to)
+{
+    if(val%to)
+        val += padding(val,to);
+    return val;
+}
+int alignPositive(int val, int to) // negatives included for offsets
+{
+    if(! to>=0)
+        return -1;
+    if(val<0)
+        to = -to;
+    return align(val,to);
+}
+int computeSumPadding( std::vector<Node::node*> *list )
+{
+    int padding =0; 
+    int lastType = -1; 
+    bool mixedTypes= false ;
+    int ptr = 0; 
+    Node::node* cur = list[0][ptr++],
+    *last  = nullptr;
+    while(cur)
+    {
+        if(cur->type != Node::var_)
+        {
+            cur = list[0][ptr++];
+            continue;
+        }
+        padding += cur->expVarUnion.variable.padding;
+        lastType = cur->expVarUnion.variable.type->type;
+        last = cur; // why use last ? 
+        cur = list[0][ptr++];
+    }
+    return padding;
 }

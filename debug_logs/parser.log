@@ -1,9 +1,14 @@
 started parsing 
 _____Toks from cur_pointer: 0_________
 Keyword int
-Identifier a
+Identifier arr
 Operator [
-Number 5
+Identifier a
+Operator +
+Identifier b
+Symbol ]
+Operator [
+Number 3
 Symbol ]
 Symbol ;
 ______________________________________
@@ -17,12 +22,12 @@ ______________________________________
   checking flags for the consecutive mods 
   in series mod-type-mod, first mod done 
   at parse dt type with tokens:   Keyword int
-  Identifier a
+  Identifier arr
   We DIDNOT got a valid 2nd dt type 
   star cnt: 0
   in dt init   dt1 type int 
   in series mod-type-mod, type done 
-  entered parseMod with token:   Identifier a
+  entered parseMod with token:   Identifier arr
   checking flags for the consecutive mods 
   in series mod-type-mod, second mod done 
   Finally the dt: 
@@ -32,15 +37,49 @@ ______________________________________
   typeStr: int 
   No secondary: 
 
-  DT parse done, parsing var now   Entered parseVar with name: a and currently pointing tok: 
+  DT parse done, parsing struct/var now   Entered parseVar with name: arr and currently pointing tok: 
 Operator [
-  VARIABLE NODE INSERTED with val a
+  VARIABLE NODE INSERTED with val arr
   After parseVar variable node in vecNodes now 
   [ got, so parsing static sizes of the array :   Got [ so Enterred parseArraySS 
   pointing to [   got exp content so parsepotential exp 
   In Parsing potential Expressions.. 
-    entered makeOneNode with token     Number 5
-    NUMBER NODE INSERTED with val 5
+    entered makeOneNode with token     Identifier a
+    ID NODE INSERTED with val a
+    Identifier node made and pusehd to vecNodes 
+    token pointer moved 1 position 
+    returning from MakeOneNode:     1
+    entered makeOneNode with token     Operator +
+    Dealing with Op 
+    checking and making Expression 
+    left node is a valid expression param
+    token pointer moved forward 
+    NODE POPPED with type 3
+    in parseexpressionableforop() 
+    In Parsing potential Expressions.. 
+      entered makeOneNode with token       Identifier b
+      ID NODE INSERTED with val b
+      Identifier node made and pusehd to vecNodes 
+      token pointer moved 1 position 
+      returning from MakeOneNode:       1
+      entered makeOneNode with token       Symbol ]
+      semicolon got in makeonenode so returning 0 
+      returning from MakeOneNode:       0
+    NODE POPPED with type: 3
+    right node: 
+    called reorder exp 
+    no child is exp, so returning 
+    EXP NODE INSERTED 
+    returning from MakeOneNode:     1
+    entered makeOneNode with token     Symbol ]
+    semicolon got in makeonenode so returning 0 
+    returning from MakeOneNode:     0
+  skipped ] after parse exp content, tok now:   Operator [
+  NODE POPPED with type: 0
+  pointing to [   got exp content so parsepotential exp 
+  In Parsing potential Expressions.. 
+    entered makeOneNode with token     Number 3
+    NUMBER NODE INSERTED with val 3
     number node made and pusehd to vecNodes 
     token pointer moved forward 1 position 
     returning from MakeOneNode:     1
@@ -51,6 +90,6 @@ Operator [
   NODE POPPED with type: 2
   after parseaass tok :   Operator [
   Expecting semicolong now 
-_____Toks from cur_pointer: 6_________
+_____Toks from cur_pointer: 11_________
 ______________________________________
   No more tokens, parsing done ! 

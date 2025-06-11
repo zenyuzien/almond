@@ -1,0 +1,80 @@
+In this series of blogs, I will explain the required quantum computing concepts that are sufficient to be able to
+fairly understand the basics of quantum computing and to begin the mimiQ source code study. All in a very minimalist way.
+
+Let's start from scratch. 
+If a particle is so small, like an electron or photon, It exhibits what are called quantum phenomena. 
+Hence, they are quantum particles.
+
+What phenomena ? 
+
+Firstly, all quantum particles can be associated with its "wave function". Let's just say that it tells us about the properties 
+of the wave. The main property that we can be concerned with is the "probability of position". 
+Before explaining further, 
+
+Did you notice that I used both the terms - wave and particle in the above sentences while referring to the same entity?
+Yes. It might sound contradictory but it's called 'wave-particle' duality. It means the entity - electron or photon, 
+it behaves like a wave or a particle both, but only one behavior at a time, it's like a human having mood swings. 
+Both the behaviors are well encoded in the wave function. 
+
+What triggers the change in behavior? Us looking at them.
+Yes, you heard it right. 
+
+When it is in wave form, and we look at them, it's behavior changes to that of particle. 
+
+Now, the main difference in the behavior of the two is straightforward, the wave version is associated to wavelength, 
+and the particle version is to position.
+
+And what that means? When the entity is in wave form - it is not just that the motion is in wave-like.
+The most important point in this phase is that - the physical position of the entity is "spread" throughout like a "wave" 
+And what that means is that, the position is not a dot, not a point, but a spatial presence. A "wave" .
+
+And do you remember me saying that this 'wave' behavior changes when we look at it ?
+Yes. When we look at it -- or more fancy way, when we try to observe it, the act of observing is 'measurement' 
+
+When we do it, it instantly shifts to particle phase. 
+This transition is technically called "wave function collapse" 
+
+Now it will become a particle, BUT BUT 
+the particle as we speak, does not have a spatial presence, its more like a point. 
+
+Where is the point originated from the wave ?
+
+This is a very important point now - The particle version can come from "any" point in the wave at "random" 
+where each point has a different probability. How do we know the probability ? 
+We will now get back to when I mentioned...
+
+"probability of position" 
+A main property of wave function as we discussed earlier. 
+A wave function gives us enough data to calculate probabilities of the different "particle states" when we "measure/observe" 
+
+The double-slit experiment is the formal experiment that demonstrates what I explain above. 
+I will briefly explain it. 
+
+let a source eject a "quantum particle" one by one in one direction, it will be in wave form.  
+Let there be an intermediate medium - an opaque barrier/wall, with 2 tiny slits ( thin hole-like exits )
+
+Now each hole will act as a source of the waves,
+as you might know - when 2 waves intersect - they can cause the waves to either increase their wave size ( amplitude ) or decrease.
+This is what will create an "interference pattern"
+
+they will hit a screen soon after.
+When they hit, a measurement happens. The hitting is a measurement because the screen 'marks' the instance where the entity made 
+contact with the screen. As we know now, the mark on the screen is dependant on the probabilities from wave function. 
+
+So after we eject multiple particles like this, On screen we see the interference pattern in form of markings.
+a place dark, a place thin, again a place dark, like black and white stripes.
+The black stripes indicate that the wave function collapsed at that point in that stripe.
+the stripes would be intense around the center and light far from centre. 
+This is due to the fact that probabilities are high around the centre region. 
+
+Now, we will do one modification to the apparatus.
+in the intermediate medium, we will observe the entity while it is in the medium, 
+guess what will happen ?
+
+the wave function will collapse midway and will emerge as particle versions from the medium to the screen.
+2 slits- 2 exits - only 2 stripes. 
+
+What do we conclude from this :
+-> measurement collapses wave function of a quantum particle
+
+If this one line makes sense to you, you are free to go to next blog 

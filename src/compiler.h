@@ -88,6 +88,8 @@ struct compilation
     std::vector<SYM::symbol *> *symTable;
     std::vector<std::vector<SYM::symbol *> *> *symTableTable;
 
+    Node::node* parserActiveBody;
+
     SYM::symbolResolver *symResolver;
     int symPtr;
 
@@ -113,7 +115,9 @@ struct compilation
     struct Token::token *tokenAt (int ptr);
     // lexer* sandbox(std::string& custom);
 
-    scope *rootScopeCreate (bool create);
+    // 1 for create, 0 for free
+    scope *rootScopeCreateFree (bool create);
+
     scope *newScope (int flags);
     void finishScope ();
     void pushScope (void *address, size_t size);
@@ -191,14 +195,12 @@ struct node
     int type, flags;
     int rowNo, colNo;
     const char *path;
-    /*struct nodeBinded
+    struct nodeBinded
     {
         node *head = nullptr; // body
         node *func = nullptr; // function
 
-        nodeBinded () = default;
-        ~nodeBinded () = default;
-    } binded; // as a pointer ?*/
+    } binded; // as a pointer ?
     union
     {
         struct
@@ -212,9 +214,24 @@ struct node
             DT::datatype *type;
             const char *name;
             node *val;
+            int padding;
         } variable;
         std::vector<Node::node *> *VariableList;
         Node::node *staticSize; // bracket eg. NUMTYPE,3 in int a[3];
+        struct
+        {
+            const char* name;
+            Node::node* bodyNode, 
+            *var; // for the instance name before closing semicolon
+        } structure ;
+        struct 
+        {
+            std::vector<Node::node*>* content; 
+            size_t size; 
+            bool padded; 
+            Node::node* largestVarNodeInContent;
+
+        } body;
 
     } expVarUnion;
     union
@@ -240,20 +257,25 @@ struct node
         // delete[] value.string_val; // Uncomment only if memory is owned by node
     }
 
+
     // implementatios of these can be found in parser.cpp
     void pushInto (std::vector<node *> *v);
     void printNode (int, bool isdebug = false);
     void nodeShiftChildrenLeft ();
     void reorderExpression (int lev = 0);
 
+    size_t varSize();   // for type var_
+    size_t varListSize(); // for type varlist_
     // idk what this nodeSet_vector is trying to do
 };
+
 node *topOf (std::vector<node *> *v);
 node *popFrom (std::vector<node *> *v);
 };
 
 struct record
 {
+    
     compilation *compiler;
     int flags;
     record (compilation *c, int f = 0)
@@ -272,10 +294,18 @@ struct record
     // void parseExressionable_root();
     record *clone (int flags);
     arrSS *parseArraySS ();
+
+    void parseBody(size_t* varSize);
+    void parseContentNode( record* rec ); // contentNOde is a statement in a body
+    void appendSizeNode(size_t*, Node::node*);
 };
 
 namespace DT
 {
+enum class sizes : size_t 
+{
+    pointerSize = 4,
+};
 enum class flag : uint16_t
 {
     IS_SIGNED = 0x01,
@@ -299,7 +329,7 @@ struct datatype
     const char *typeStr;
     union
     {
-        struct node *structNode, *unionNode;
+        struct Node::node *structNode, *unionNode;
     };
     struct array
     {
@@ -322,6 +352,11 @@ struct datatype
     void parserDatatypeInit (compilation *c, Token::token *dt1, Token::token *dt2, int stars, int expectation);
 
     void parseVar (compilation *c, Token::token *tok, record *h);
+
+    size_t dtSizeArrayAccess();
+    size_t dtElementSize();
+    size_t dtPointingSize();
+    size_t dtSize();
 };
 enum class type
 {
@@ -379,5 +414,10 @@ struct parsePriority
     std::vector<std::string> operators;
     bool direction;
 };
+
+int padding(int val, int to);
+int align(int val, int to);
+int alignPositive(int val, int to);
+int computeSumPadding( std::vector<Node::node*> *list );
 
 #endif

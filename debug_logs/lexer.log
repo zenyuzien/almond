@@ -1,8 +1,34 @@
 ***LEXER STARTED***
 Getting next Token 
+Switch --> s
+	Token to be returned : 
+Keyword static
+Getting next Token 
+Switch -->  
+Getting next Token 
+Switch --> l
+	Token to be returned : 
+Keyword long
+Getting next Token 
+Switch -->  
+Getting next Token 
 Switch --> i
 	Token to be returned : 
 Keyword int
+Getting next Token 
+Switch --> *
+	Token to be returned : 
+Operator *
+Getting next Token 
+Switch --> *
+	Token to be returned : 
+Operator *
+Getting next Token 
+Switch -->  
+Getting next Token 
+Switch --> c
+	Token to be returned : 
+Keyword const
 Getting next Token 
 Switch -->  
 Getting next Token 
@@ -10,16 +36,38 @@ Switch --> a
 	Token to be returned : 
 Identifier a
 Getting next Token 
-Switch --> ,
-	Token to be returned : 
-Operator ,
+Switch -->  
 Getting next Token 
-Switch --> b
-ID/kw starting with x (ruled out binary number) 
+Switch --> =
+= can expect more chars to the operator 
 	Token to be returned : 
-Identifier b
+Operator =
 Getting next Token 
 Switch -->  
+Getting next Token 
+Switch --> 1
+Got Number 12 with numTYpe: 0
+	Token to be returned : 
+Number 12
+Getting next Token 
+Switch --> *
+	Token to be returned : 
+Operator *
+Getting next Token 
+Switch --> 1
+Got Number 12 with numTYpe: 0
+	Token to be returned : 
+Number 12
+Getting next Token 
+Switch --> +
++ can expect more chars to the operator 
+	Token to be returned : 
+Operator +
+Getting next Token 
+Switch --> 2
+Got Number 24 with numTYpe: 0
+	Token to be returned : 
+Number 24
 Getting next Token 
 Switch --> ;
 In Symbol case with ;
@@ -27,13 +75,148 @@ token symbol: ;
 	Token to be returned : 
 Symbol ;
 Getting next Token 
+Switch --> 
+
+	Token to be returned : 
+New Line
+Getting next Token 
+Switch --> s
+	Token to be returned : 
+Keyword static
+Getting next Token 
+Switch -->  
+Getting next Token 
+Switch --> l
+	Token to be returned : 
+Keyword long
+Getting next Token 
+Switch -->  
+Getting next Token 
+Switch --> i
+	Token to be returned : 
+Keyword int
+Getting next Token 
+Switch --> *
+	Token to be returned : 
+Operator *
+Getting next Token 
+Switch --> *
+	Token to be returned : 
+Operator *
+Getting next Token 
+Switch -->  
+Getting next Token 
+Switch --> c
+	Token to be returned : 
+Keyword const
+Getting next Token 
+Switch -->  
+Getting next Token 
+Switch --> b
+ID/kw starting with x (ruled out binary number) 
+	Token to be returned : 
+Identifier b
+Getting next Token 
+Switch --> [
+	Token to be returned : 
+Operator [
+Getting next Token 
+Switch --> 1
+Got Number 12 with numTYpe: 0
+	Token to be returned : 
+Number 12
+Getting next Token 
+Switch --> ]
+In Symbol case with ]
+token symbol: ]
+	Token to be returned : 
+Symbol ]
+Getting next Token 
+Switch --> [
+	Token to be returned : 
+Operator [
+Getting next Token 
+Switch --> 1
+Got Number 12 with numTYpe: 0
+	Token to be returned : 
+Number 12
+Getting next Token 
+Switch --> *
+	Token to be returned : 
+Operator *
+Getting next Token 
+Switch --> 1
+Got Number 12 with numTYpe: 0
+	Token to be returned : 
+Number 12
+Getting next Token 
+Switch --> +
++ can expect more chars to the operator 
+	Token to be returned : 
+Operator +
+Getting next Token 
+Switch --> 2
+Got Number 24 with numTYpe: 0
+	Token to be returned : 
+Number 24
+Getting next Token 
+Switch --> ]
+In Symbol case with ]
+token symbol: ]
+	Token to be returned : 
+Symbol ]
+Getting next Token 
+Switch --> ;
+In Symbol case with ;
+token symbol: ;
+	Token to be returned : 
+Symbol ;
+Getting next Token 
+Switch --> 
+
+	Token to be returned : 
+New Line
+Getting next Token 
+Switch --> /
+second / : single comment begin 
+Getting next Token 
 EOF case 
 ***LEXER ENDED***
 
 
-Summary: Token count is 5
+Summary: Token count is 35
+Keyword static
+Keyword long
 Keyword int
+Operator *
+Operator *
+Keyword const
 Identifier a
-Operator ,
-Identifier b
+Operator =
+Number 12
+Operator *
+Number 12
+Operator +
+Number 24
 Symbol ;
+New Line
+Keyword static
+Keyword long
+Keyword int
+Operator *
+Operator *
+Keyword const
+Identifier b
+Operator [
+Number 12
+Symbol ]
+Operator [
+Number 12
+Operator *
+Number 12
+Operator +
+Number 24
+Symbol ]
+Symbol ;
+New Line
+Comment struct a;

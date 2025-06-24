@@ -9,6 +9,7 @@
 
 extern std::ofstream parserDebugger;
 
+
 Token::token* compilation::tokenAt()
 {
     
@@ -54,7 +55,7 @@ compilation::skipCharOrError (char c)
     auto tok = tokenAt ();
     tokenPtr++;
     if (!tok || tok->type != static_cast<int> (Token::type::Sym) || tok->charVal != c)
-        genError ("Char %c is not allowed \n", c);
+        genError ("Char %c is expected, %c not allowed \n",tok->charVal, c );
 }
 void compilation::genError(const char* msg, ...)
 {
@@ -111,6 +112,11 @@ int compilation::compileFile
     std::cout<<"\nLexed successfully ! \n";
     lexerDebugger.close();
     // parsing 
+
+    symResolver = new SYM::symbolResolver();
+    symResolver->compiler = this;
+    symResolver->init();
+    symResolver->newTable();
     
     parserActiveBody = nullptr;
     auto parse_process = new parser();
@@ -212,9 +218,32 @@ scope* compilation::rootScopeCreateFree(bool create) // 1 create, 0 free
         return instances[0][instances->size()-1];
     }
 
+    Node::node* SYM::symbolResolver::nodeFromSym(SYM::symbol* sym)
+    {
+        if(sym->type != static_cast<int>(SYM::type::node) )
+            return NULL;
+        return (Node::node*)sym->metadata;
+    }
+    Node::node* SYM::symbolResolver::nodeFromSymbol(std::string& name)
+    {
+        struct SYM::symbol* sym ; 
+        sym = get( name );
+        if(!sym)
+            return nullptr; 
+        return nodeFromSym(sym);
+    }
+    Node::node* SYM::symbolResolver::nodeForName(std::string& name)
+    {
+        Node::node* n ; 
+        n = nodeFromSymbol(name);
+        if(!n || (n->type != Node::struct_))
+            return nullptr; 
+        return n;
+    }
+
         void SYM::symbolResolver::init()
         {
-            compiler->symTableTable = new std::vector<std::vector<SYM::symbol*>*>();
+            compiler->symTableTable = new std::vector< std::vector<SYM::symbol*>* >();
             //new std::vector<SYM::symbol*>() ; 
         }
         void SYM::symbolResolver::push(SYM::symbol* s)
@@ -224,23 +253,34 @@ scope* compilation::rootScopeCreateFree(bool create) // 1 create, 0 free
         void SYM::symbolResolver::newTable()
         {
             if(compiler->symTable)
-                compiler->symTableTable->push_back(compiler->symTable);
+                compiler->symTableTable[0].push_back(compiler->symTable);
             compiler->symTable = new std::vector<SYM::symbol*>();
         }
         void SYM::symbolResolver::endTable()
         {
             compiler->symTable = compiler->symTableTable[0].back();
             compiler->symTableTable[0].pop_back();
+            /*
+        std::vector<SYM::symbol *> *symTable;
+        std::vector<std::vector<SYM::symbol *>> *symTableTable;
+            */
         }
         SYM::symbol* SYM::symbolResolver::get(std::string& name) 
         {
             compiler->symPtr =0 ;
-            auto s = compiler->symTable[0][0];
+            auto tmp = compiler->symTable[0];
+            SYM::symbol* s;
+            if(tmp.size())
+                s = compiler->symTable[0][0];
             while(s)
             {
+                //std::cout<<compiler->symTable[0].size()<<" ";
                 if( s->name == name )
                     return s;
-                s = compiler->symTable[0][++compiler->symPtr];
+                ++compiler->symPtr;
+                if( compiler->symTable[0].size() > compiler->symPtr)
+                s = compiler->symTable[0][compiler->symPtr];
+                else break;
             }
             return nullptr; 
         }
@@ -255,7 +295,8 @@ scope* compilation::rootScopeCreateFree(bool create) // 1 create, 0 free
         }
         SYM::symbol* SYM::symbolResolver::makeSymbol(const char* name, int type, void* content)
         {
-            auto n = std::string(name);
+            std::string n;
+            if(name) n = std::string(name);
             if( SYM::symbolResolver::get(n) )
                 return nullptr;
             auto sym = new SYM::symbol();
@@ -290,16 +331,31 @@ scope* compilation::rootScopeCreateFree(bool create) // 1 create, 0 free
                     exit(-1);
             }
         }
-void compilation::printTokensFromCurPointer()
+void compilation::printTokensFromCurPointer(int count)
 {
+    if(!count ||  ((tokenPtr +  count) >= vecTokens[0].size()) )
+        count = vecTokens[0].size() ;
+
     std::cout<< "Tokens from cur_pointer: " << tokenPtr << std::endl;
-    for(int i = tokenPtr ; i < vecTokens[0].size(); i++ )
+    for(int i = tokenPtr ;i < count; i++ )
         vecTokens[0][i]->print();
 }
-void compilation::printTokensFromCurPointer(std::ofstream& wr)
+void compilation::printTokensFromCurPointer(std::ofstream& wr, int count)
 {
-    wr<< "_____Toks from cur_pointer: " << tokenPtr << "_________"<< std::endl;
-    for(int i = tokenPtr ; i < vecTokens[0].size(); i++ )
+    /*
+        Let's say there are 3 tokenn in total
+        the pointer is at 0th 
+        and count is 1. 
+        then we check if 0th + 1 is a valid one within bounds 
+        ptr + count < size is the condition 
+        if count is 3, 0th + 3 is not existant    
+    */
+    wr<<" size is "<< vecTokens[0].size() << " and cnt is "<< count << " with ptr: "<< tokenPtr  <<std::endl;
+    if(!count ||  ((tokenPtr +  count) >= vecTokens[0].size()) )
+        count = vecTokens[0].size() - (tokenPtr +1) ; // if size 3, ptr at 1, cnt 3, then count should become 1.  
+
+    wr<< "_____Toks from cur_pointer: " << tokenPtr << " _________ cnt " << count << std::endl;
+    for(int i = tokenPtr ; i < (tokenPtr+count); i++ )
         vecTokens[0][i]->print(wr);
     wr << "______________________________________\n";
 }
@@ -344,4 +400,21 @@ int computeSumPadding( std::vector<Node::node*> *list )
         cur = list[0][ptr++];
     }
     return padding;
+}
+
+void compilation::symresolverBuildForNode(Node::node* n)
+{
+    switch( n->type)
+    {
+        case Node::struct_:
+
+            if(n->flags & static_cast<int>(Node::flags::forwardDeclaration) )
+                return;
+            symResolver->makeSymbol(n->expVarUnion.structure.name,  static_cast<int>( SYM::type::node), n);
+
+        break;
+
+        default:
+        break;
+    }
 }

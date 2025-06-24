@@ -75,12 +75,16 @@ Token::token::type_and_val_to_str ()
 void
 Token::token::print ()
 {
+    if(!this)
+        return ;
     // calling the utility function defined above
     std::cout << type_and_val_to_str () << std::endl;
 }
 void
 Token::token::print (std::ofstream &wr)
 {
+    if(!this)
+        return ;
     wr << type_and_val_to_str () << std::endl;
 }
 

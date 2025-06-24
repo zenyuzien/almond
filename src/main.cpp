@@ -12,6 +12,7 @@ bool PARSER_DEBUG;
 std::ofstream parserDebugger;
 
 int main(int argc, char *argv[]) {
+    
     fs::create_directories("/home/zenyuzien/Downloads/almond/almond/debug_logs");
 
     LEXER_DEBUG = false;

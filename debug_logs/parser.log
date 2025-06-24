@@ -1,20 +1,64 @@
 started parsing 
-_____Toks from cur_pointer: 0_________
-Keyword int
-Identifier arr
-Operator [
+ size is 22 and cnt is 0 with ptr: 0
+_____Toks from cur_pointer: 0 _________ cnt 21
+Keyword struct
 Identifier a
-Operator +
-Identifier b
-Symbol ]
-Operator [
-Number 3
-Symbol ]
+New Line
+Symbol {
+New Line
+Keyword int
+Identifier a1
+Operator =
+Number 5
 Symbol ;
+New Line
+Keyword int
+Identifier a2
+Operator =
+Number 10
+Operator +
+Number 4
+Symbol ;
+New Line
+Symbol }
+Identifier anew
 ______________________________________
   In parse_next() with tok 
-  Keyword int
-  entered parseGlobalKeyword   entered parseKw with token:   Keyword int
+  Keyword struct
+  entered parseGlobalKeyword   entered parseKw with token:   Keyword struct
+  the token is a type modifier or datatype, we can expect form of (typeMod)*(datatype)+(typemod)* {* means 0+, + means 1+} 
+  entered parseDeclaration to parse potential VFSU 
+  entered DT::datatype::parse. Starting series mod-type-mod 
+  entered parseMod with token:   Keyword struct
+  checking flags for the consecutive mods 
+  in series mod-type-mod, first mod done 
+  at parse dt type with tokens:   Keyword struct
+  Identifier a
+  We DIDNOT got a valid 2nd dt type 
+  Its a struct/union, checking name by checking token: 
+  Identifier a
+  star cnt: 0
+  in dt init   in series mod-type-mod, type done 
+  entered parseMod with token:   Symbol {
+  checking flags for the consecutive mods 
+  in series mod-type-mod, second mod done 
+  Finally the dt: 
+  pdepth: 0 type: 6 
+  flags: 0000000000000001
+  size: 0 
+  typeStr: a 
+  No secondary: 
+
+  DT parse done, parsing struct/var now   Parsing body now 
+  Multi-line body   Begenning to parse a statement now:    size is 22 and cnt is 5 with ptr: 5
+_____Toks from cur_pointer: 5 _________ cnt 5
+Keyword int
+Identifier a1
+Operator =
+Number 5
+Symbol ;
+______________________________________
+  entered parseKw with token:   Keyword int
   the token is a type modifier or datatype, we can expect form of (typeMod)*(datatype)+(typemod)* {* means 0+, + means 1+} 
   entered parseDeclaration to parse potential VFSU 
   entered DT::datatype::parse. Starting series mod-type-mod 
@@ -22,12 +66,12 @@ ______________________________________
   checking flags for the consecutive mods 
   in series mod-type-mod, first mod done 
   at parse dt type with tokens:   Keyword int
-  Identifier arr
+  Identifier a1
   We DIDNOT got a valid 2nd dt type 
   star cnt: 0
   in dt init   dt1 type int 
   in series mod-type-mod, type done 
-  entered parseMod with token:   Identifier arr
+  entered parseMod with token:   Identifier a1
   checking flags for the consecutive mods 
   in series mod-type-mod, second mod done 
   Finally the dt: 
@@ -37,59 +81,132 @@ ______________________________________
   typeStr: int 
   No secondary: 
 
-  DT parse done, parsing struct/var now   Entered parseVar with name: arr and currently pointing tok: 
-Operator [
-  VARIABLE NODE INSERTED with val arr
-  After parseVar variable node in vecNodes now 
-  [ got, so parsing static sizes of the array :   Got [ so Enterred parseArraySS 
-  pointing to [   got exp content so parsepotential exp 
+  DT parse done, parsing struct/var now   Entered parseVar with name: a1 and currently pointing tok: 
+Operator =
+  = found, so parsing potential expressions now 
   In Parsing potential Expressions.. 
-    entered makeOneNode with token     Identifier a
-    ID NODE INSERTED with val a
-    Identifier node made and pusehd to vecNodes 
-    token pointer moved 1 position 
+    entered makeOneNode with token     Number 5
+    _PUSHING NODE OF TYPE: number
+    Updated: number     
+    number node made and pusehd to vecNodes 
+    token pointer moved forward 1 position 
+    returning from MakeOneNode:     1
+    entered makeOneNode with token     Symbol ;
+    semicolon got in makeonenode so returning 0 
+    returning from MakeOneNode:     0
+  _POPPING NODE OF TYPE: number
+  Updated: empty! 
+  Updated: var   
+  After parseVar variable node in vecNodes now 
+  Expecting semicolong now 
+  _POPPING NODE OF TYPE: var
+  Updated: empty! 
+  and pushed into content node 
+  Begenning to parse a statement now:    size is 22 and cnt is 5 with ptr: 11
+_____Toks from cur_pointer: 11 _________ cnt 5
+Keyword int
+Identifier a2
+Operator =
+Number 10
+Operator +
+______________________________________
+  entered parseKw with token:   Keyword int
+  the token is a type modifier or datatype, we can expect form of (typeMod)*(datatype)+(typemod)* {* means 0+, + means 1+} 
+  entered parseDeclaration to parse potential VFSU 
+  entered DT::datatype::parse. Starting series mod-type-mod 
+  entered parseMod with token:   Keyword int
+  checking flags for the consecutive mods 
+  in series mod-type-mod, first mod done 
+  at parse dt type with tokens:   Keyword int
+  Identifier a2
+  We DIDNOT got a valid 2nd dt type 
+  star cnt: 0
+  in dt init   dt1 type int 
+  in series mod-type-mod, type done 
+  entered parseMod with token:   Identifier a2
+  checking flags for the consecutive mods 
+  in series mod-type-mod, second mod done 
+  Finally the dt: 
+  pdepth: 0 type: 3 
+  flags: 0000000000000001
+  size: 4 
+  typeStr: int 
+  No secondary: 
+
+  DT parse done, parsing struct/var now   Entered parseVar with name: a2 and currently pointing tok: 
+Operator =
+  = found, so parsing potential expressions now 
+  In Parsing potential Expressions.. 
+    entered makeOneNode with token     Number 10
+    _PUSHING NODE OF TYPE: number
+    Updated: number     
+    number node made and pusehd to vecNodes 
+    token pointer moved forward 1 position 
     returning from MakeOneNode:     1
     entered makeOneNode with token     Operator +
     Dealing with Op 
     checking and making Expression 
     left node is a valid expression param
+    number val: 10
     token pointer moved forward 
-    NODE POPPED with type 3
+    _POPPING NODE OF TYPE: number
+    Updated: empty! 
     in parseexpressionableforop() 
     In Parsing potential Expressions.. 
-      entered makeOneNode with token       Identifier b
-      ID NODE INSERTED with val b
-      Identifier node made and pusehd to vecNodes 
-      token pointer moved 1 position 
+      entered makeOneNode with token       Number 4
+      _PUSHING NODE OF TYPE: number
+      Updated: number       
+      number node made and pusehd to vecNodes 
+      token pointer moved forward 1 position 
       returning from MakeOneNode:       1
-      entered makeOneNode with token       Symbol ]
+      entered makeOneNode with token       Symbol ;
       semicolon got in makeonenode so returning 0 
       returning from MakeOneNode:       0
-    NODE POPPED with type: 3
+    Updated: empty! 
+    NODE POPPED with type: 2
     right node: 
+    number val: 4
     called reorder exp 
     no child is exp, so returning 
-    EXP NODE INSERTED 
+    _PUSHING NODE OF TYPE: exp
+    Updated: exp     
     returning from MakeOneNode:     1
-    entered makeOneNode with token     Symbol ]
+    entered makeOneNode with token     Symbol ;
     semicolon got in makeonenode so returning 0 
     returning from MakeOneNode:     0
-  skipped ] after parse exp content, tok now:   Operator [
-  NODE POPPED with type: 0
-  pointing to [   got exp content so parsepotential exp 
-  In Parsing potential Expressions.. 
-    entered makeOneNode with token     Number 3
-    NUMBER NODE INSERTED with val 3
-    number node made and pusehd to vecNodes 
-    token pointer moved forward 1 position 
-    returning from MakeOneNode:     1
-    entered makeOneNode with token     Symbol ]
-    semicolon got in makeonenode so returning 0 
-    returning from MakeOneNode:     0
-  skipped ] after parse exp content, tok now:   Symbol ;
-  NODE POPPED with type: 2
-  after parseaass tok :   Operator [
+  _POPPING NODE OF TYPE: exp
+  Updated: empty! 
+  Updated: var   
+  After parseVar variable node in vecNodes now 
   Expecting semicolong now 
-_____Toks from cur_pointer: 11_________
+  _POPPING NODE OF TYPE: var
+  Updated: empty! 
+  and pushed into content node 
+  Exited from the block doing multi line parsing, the content: 
+
+  var type, flags: 0 union: 
+  var name: a1 val: 5
+  var type, flags: 0 union: 
+  var name: a2 val: (10+4)
+  _PUSHING the multiline chunk as a body type node 
+  Updated: body   
+  retrieving to wrap with a struct Node 
+  _POPPING NODE OF TYPE: body
+  Updated: empty! 
+  Also declared a variable within the struct definition 
+  Updated: var   
+  Updated: empty! 
+  _PUSHING NODE OF TYPE: struct
+  Updated: struct   
+  wrap and push complete 
+  for SYMRESOLVER 
+  _POPPING NODE OF TYPE: struct
+  Updated: empty! 
+  _PUSHING NODE OF TYPE: struct
+  Updated: struct   
+  for SYMRESOLVER done 
+  EOF 
+ size is 22 and cnt is 0 with ptr: 22
+_____Toks from cur_pointer: 22 _________ cnt -1
 ______________________________________
   No more tokens, parsing done ! 

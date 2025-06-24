@@ -62,12 +62,13 @@ struct symbolResolver
     symbol *getForNF (std::string &name);
     symbol *makeSymbol (const char *name, int type, void *content);
     Node::node *node (symbol *sym);
-
+    Node::node* nodeFromSym(SYM::symbol* sym);
+    Node::node* nodeFromSymbol(std::string& name);
+    Node::node* nodeForName(std::string& name);
     /*
         building for variables, functions, structures, unions
         pending
     */
-    void buildForNode (Node::node *node);
 };
 };
 
@@ -86,7 +87,7 @@ struct compilation
     std::vector<Node::node *> *vecNodes, *vecTree;
 
     std::vector<SYM::symbol *> *symTable;
-    std::vector<std::vector<SYM::symbol *> *> *symTableTable;
+    std::vector<std::vector<SYM::symbol *>* > *symTableTable;
 
     Node::node* parserActiveBody;
 
@@ -123,9 +124,23 @@ struct compilation
     void pushScope (void *address, size_t size);
     void *scopeFromTo (scope *s, scope *e);
     void *scopeLastInstance ();
-    void printTokensFromCurPointer (std::ofstream &wr);
-    void printTokensFromCurPointer ();
+    void printTokensFromCurPointer (std::ofstream &wr, int count=0);
+    void printTokensFromCurPointer (int count=0);
     void skipCharOrError (char c);
+    void symresolverBuildForNode(Node::node* node);
+};
+
+
+struct parserScope
+{
+    int flags,stackOffset;
+    Node::node* node; // var ?
+    parserScope(Node::node* n, int o, int f)
+    {
+        this->node = n;
+        this->flags = f;
+        this->stackOffset = o;
+    }
 };
 
 struct scope
@@ -153,12 +168,15 @@ struct scope
     void *top ();
 };
 
-enum
-{
-    NODE_FLAG_INSIDE_EXPRESSION = 0b00000001
-};
+
 namespace Node
 {
+enum class flags 
+{
+    insideExpression   = 1 ,
+    forwardDeclaration = 2 ,
+    varCombined        = 4 ,
+};
 enum
 {
     exp_,
@@ -215,6 +233,7 @@ struct node
             const char *name;
             node *val;
             int padding;
+            int allignedOffset;
         } variable;
         std::vector<Node::node *> *VariableList;
         Node::node *staticSize; // bracket eg. NUMTYPE,3 in int a[3];
@@ -223,6 +242,7 @@ struct node
             const char* name;
             Node::node* bodyNode, 
             *var; // for the instance name before closing semicolon
+            // only one 
         } structure ;
         struct 
         {
@@ -259,7 +279,7 @@ struct node
 
 
     // implementatios of these can be found in parser.cpp
-    void pushInto (std::vector<node *> *v);
+    void pushInto (std::vector<node *> *v, bool debug = false);
     void printNode (int, bool isdebug = false);
     void nodeShiftChildrenLeft ();
     void reorderExpression (int lev = 0);
@@ -267,12 +287,25 @@ struct node
     size_t varSize();   // for type var_
     size_t varListSize(); // for type varlist_
     // idk what this nodeSet_vector is trying to do
+
+    Node::node* extractListOrVarNode();
 };
 
 node *topOf (std::vector<node *> *v);
-node *popFrom (std::vector<node *> *v);
+node *popFrom (std::vector<node *> *v, bool debug = false);
 };
 
+
+enum class recordFlags
+{
+    insideUnion = 1,
+    upwardStack = 2,
+    globalScope = 4,
+    insideStructure = 8,
+    insideExpression = 16, 
+    forwardDeclaration = 32,
+    varCombined = 64,
+};
 struct record
 {
     
@@ -291,6 +324,13 @@ struct record
     void parseKw (Token::token *tok);
     void parseDeclaration ();
     void parseGlobalKeyword ();
+    void finalize(
+        Node::node* bodyNode,
+        std::vector<Node::node*>* content,
+        size_t* size,  
+        Node::node* l1, Node::node* l2
+    );
+    void parseSymbol();
     // void parseExressionable_root();
     record *clone (int flags);
     arrSS *parseArraySS ();
@@ -298,6 +338,7 @@ struct record
     void parseBody(size_t* varSize);
     void parseContentNode( record* rec ); // contentNOde is a statement in a body
     void appendSizeNode(size_t*, Node::node*);
+    void makeVarAndReg(DT::datatype*, Token::token* , Node::node* );
 };
 
 namespace DT

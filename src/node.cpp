@@ -65,12 +65,67 @@ shouldWeEvalLeft (const char *left, const char *right)
 
     return left_rank <= right_rank;
 }
+const char* nodeTypeToStr(int type) {
+    static const char* names[] = {
+        "exp",
+        "exp_bracket",
+        "number",
+        "id",
+        "string",
+        "var",
+        "varlist",
+        "func",
+        "body",
+        "return",
+        "if",
+        "else",
+        "while",
+        "for",
+        "break",
+        "continue",
+        "switch",
+        "case",
+        "default",
+        "goto",
+        "unary",
+        "ternary",
+        "label",
+        "struct",
+        "union",
+        "bracket",
+        "cast",
+        "blank"
+    };
+
+    if (type >= 0 && type < sizeof(names) / sizeof(names[0]))
+        return names[type];
+    return "unknown";
+}
 
 void
-Node::node::pushInto (std::vector<Node::node *> *v)
+Node::node::pushInto(std::vector<Node::node*>* v, bool debug)
 {
-    v->push_back (this);
+    if (debug) {
+        if (this) {
+            ifdp parserDebugger << "_PUSHING NODE OF TYPE: " << nodeTypeToStr(this->type) << "\n";
+        } else {
+            ifdp parserDebugger << "_FATAL: ZOMBIE PROGRAM !\n";
+        }
+    }
+    v->push_back(this);
+
+    ifdpm("Updated: ");
+    if(!v->size())
+            {
+                if(PARSER_DEBUG) parserDebugger << "empty! \n";
+                return ;
+            }
+    for(auto x : (*v))
+    {
+        if(PARSER_DEBUG) parserDebugger << nodeTypeToStr(x->type) <<" ";
+    }   ifdpm("\n");
 }
+
 Node::node *
 Node::topOf (std::vector<Node::node *> *v)
 {
@@ -79,14 +134,36 @@ Node::topOf (std::vector<Node::node *> *v)
     return nullptr;
 }
 Node::node *
-Node::popFrom (std::vector<Node::node *> *v)
+Node::popFrom (std::vector<Node::node *> *v, bool debug)
 {
     if (v->size ())
         {
             auto x = v->back ();
+            if(debug)
+            {
+                if(x)
+                {
+                    ifdp parserDebugger << "_POPPING NODE OF TYPE: " << nodeTypeToStr(x->type)<< "\n";
+                }
+                else 
+                {
+                    ifdp parserDebugger << "_POPPING null node:\n";
+                }
+            }
             v->pop_back ();
+            ifdpm("Updated: ");
+            if(!v->size())
+            {
+                if(PARSER_DEBUG) parserDebugger << "empty! \n";
+                return x;
+            }
+            for(auto x : (*v))
+            {
+                if(PARSER_DEBUG) parserDebugger << nodeTypeToStr(x->type) <<" ";
+            }   ifdpm("\n");
             return x;
         }
+    ifdpm("NOTHING TO POP FROM\n");
     return nullptr;
 }
 std::string printNodeUtility(Node::node*);
@@ -131,9 +208,48 @@ std::string printNodeUtility(Node::node* exp)
     if (!exp) return "[null]";  // Safety check
 
     std::string tmp;
+/*
+        struct
+        {
+            const char* name;
+            Node::node* bodyNode, 
+            *var; // for the instance name before closing semicolon
+        } structure ;
+        struct 
+        {
+            std::vector<Node::node*>* content; 
+            size_t size; 
+            bool padded; 
+            Node::node* largestVarNodeInContent;
 
+        } body;
+*/
     switch (exp->type)
     {
+        case Node::struct_ :
+        {
+            tmp += "struct ";
+            if(exp->expVarUnion.structure.name)
+            {
+                tmp += std::string( exp->expVarUnion.structure.name) ; 
+                tmp += "\n{\n";
+            }
+            
+            auto n = exp->expVarUnion.structure.bodyNode;
+            auto statements = n->expVarUnion.body.content;
+            for(auto statement : statements[0])
+            {
+                tmp += "\t";
+                tmp += printNodeUtility(statement);
+                tmp += " ;\n";
+            }
+            tmp+= "} "; 
+            if(exp->expVarUnion.structure.var && exp->expVarUnion.structure.var->expVarUnion.variable.name)
+                tmp+= exp->expVarUnion.structure.var->expVarUnion.variable.name;
+            tmp+="\n";
+            break;
+        }
+
         case Node::bracket_:
             return printNodeUtility(exp->expVarUnion.staticSize);
         break;
@@ -190,8 +306,19 @@ Node::node::printNode (int level, bool isDebug)
                     gapd (level);
                     parserDebugger << "var type, flags: " << flags << " union: \n";
                     gapd (level);
-                    parserDebugger << "var name: " << expVarUnion.variable.name << " val: " << expVarUnion.variable.val << std::endl;
+                    parserDebugger << "var name: " << expVarUnion.variable.name << " val: ";
+
+                    if(expVarUnion.variable.val ->type == Node::exp_)
+                        parserDebugger << printNodeUtility(expVarUnion.variable.val )<< std::endl;
+                    else if(expVarUnion.variable.val->type == Node::number_)
+                        parserDebugger << expVarUnion.variable.val->val.ullVal<< std::endl;
                 }
+            else if(type == struct_)
+            {
+                gapd (level);
+               // parserDebugger << 
+
+            }
             return;
         }
 
@@ -321,4 +448,15 @@ size_t Node::node::varListSize() // for type varlist_
         return totSize;
     }
     return 0;
+}
+
+Node::node* Node::node::extractListOrVarNode()
+{
+    if( type == Node::varlist_ || type == Node::var_ )
+        return this; 
+    else if(type == Node::struct_)
+        return expVarUnion.structure.var;
+    else if(type == Node::union_)
+        return nullptr; // TODO 
+    return nullptr;
 }

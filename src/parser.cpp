@@ -1,11 +1,11 @@
 // #include "parser.h"
 #include "compiler.h"
 #include <iomanip>
+#include <string>
 #include <iostream>
 #include <memory.h>
 
 int gaper;
-int recordInsideUnion = 1 ;
 
 extern bool PARSER_DEBUG;
 extern std::ofstream parserDebugger;
@@ -36,6 +36,20 @@ extern std::ofstream parserDebugger;
     case Node::id_:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
     case Node::number_:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            \
     case Node::string_
+
+size_t sizeOfStruct( const char* structName, compilation* compiler)
+{
+    struct SYM::symbol* sym ; 
+    auto str = std::string(structName);
+
+    sym = compiler->symResolver->get( str);
+    if(!sym)
+        return 0;
+    Node::node* data = (Node::node*) sym->metadata ; 
+
+    return data->expVarUnion.structure.bodyNode->expVarUnion.body.size;
+    
+}
 
 // a small gdb- like feature to track changes to struct data_type, purely for debugging purpose
 bool
@@ -118,15 +132,24 @@ DT::datatype::print (bool isdebug)
             std::bitset<16> binary (flags);
             ifdp parserDebugger << "flags: " << binary << std::endl;
             ifdp parserDebugger << "size: " << size << " \n";
-            if (typeStr)
-                ifdp parserDebugger << "typeStr: " << std::string (typeStr) << " \n";
-            if (sec != nullptr)
-                {
-                    ifdp parserDebugger << "secondary: \n\n";
-                    sec->print (isdebug);
-                }
-            else
-                ifdp parserDebugger << "No secondary: \n\n";
+            try 
+            {
+                if (typeStr != nullptr)
+                    ifdp parserDebugger << "typeStr: " << std::string (typeStr) << " \n";
+                if (sec != nullptr)
+                    {
+                        ifdp parserDebugger << "secondary: \n\n";
+                        sec->print (isdebug);
+                    }
+                else
+                    ifdp parserDebugger << "No secondary: \n\n";
+            } catch (const std::logic_error& e) {
+        ifdp parserDebugger << "Caught logic_error: " << e.what() << std::endl;
+    } catch (const std::exception& e) {
+        // Catches other std exceptions
+        ifdp parserDebugger << "Caught exception: " << e.what() << std::endl;
+    }
+
             return;
         }
 
@@ -322,7 +345,14 @@ DT::datatype::parserDatatypeInit (compilation *compiler, Token::token *dt1, Toke
                 }
         }
     else if ((exp_type == static_cast<int> (DT::expect::struct_)) || (exp_type == static_cast<int> (DT::expect::union_)))
-        compiler->genError ("structs/unions unsupported for now \n");
+    {
+        this->typeStr = dt1->stringVal; 
+        this->type = static_cast<int>(DT::type::struct_) ; 
+        this->size = sizeOfStruct(dt1->stringVal, compiler);
+        std::string name = (dt1->stringVal) ? std::string( dt1->stringVal): "";
+
+        this->structNode = compiler->symResolver->nodeForName( name );
+    }
     else
         compiler->genError ("FATAL ERROR: unnsuported datatyp exp \n");
 
@@ -340,6 +370,7 @@ DT::datatype::parseDatatypeType (compilation *compiler)
 {
     auto dt_tok1 = compiler->tokenAt ();
     compiler->tokenPtr++;
+    //Token::token* name;
     auto dt_tok2 = compiler->tokenAt ();
     ifdpm ("at parse dt type with tokens: ");
     ifdp if (dt_tok1) dt_tok1->print (parserDebugger);
@@ -358,6 +389,7 @@ DT::datatype::parseDatatypeType (compilation *compiler)
         if (strcmp(dt_tok1->stringVal, "float") == 0 ||
             strcmp(dt_tok1->stringVal, "long") == 0  ||
             strcmp(dt_tok1->stringVal, "double") == 0)
+            if(dt_tok2)
             if (dt_tok2->type == static_cast<int> (Token::type::KW))
                 if ( !strcmp(dt_tok2->stringVal,"int"))
                     {
@@ -373,18 +405,22 @@ DT::datatype::parseDatatypeType (compilation *compiler)
         expected_type = static_cast<int> (DT::expect::struct_);
     if (flag)
         {
-            ifdpm ("Its a struct/union, checking name byy checking tokne: \n");
-            auto name = compiler->tokenAt (); // we now have the data of struct or union in expected type so we can store the string in token (id of sttruct/union)
-            ifdp name->print (parserDebugger);
-            if (name->type == static_cast<int> (Token::type::ID))
+            ifdpm ("Its a struct/union, checking name by checking token: \n");
+            
+            dt_tok1 = compiler->tokenAt (); // we now have the data of struct or union in expected type so we can store the string in token (id of sttruct/union)
+            ifdp dt_tok1->print (parserDebugger);
+            if (dt_tok1->type == static_cast<int> (Token::type::ID))
+            {
                 compiler->tokenPtr++;
+
+            }
             else
                 {
                     // struct {} abc; // nameless struct with direct instance. we generate name for our conveniance
-                    name = new Token::token ();
-                    name->type == static_cast<int> (Token::type::ID);
+                    
+                    dt_tok1->type == static_cast<int> (Token::type::ID);
                     std::string nameStr = "_nameless_" + std::to_string (name_giver++);
-                    name->stringVal = strdup (nameStr.c_str ());
+                    dt_tok1->stringVal = strdup (nameStr.c_str ());
                     setFlag (DT::flag::STRUCT_UNION_NO_NAME);
                 }
         }
@@ -399,6 +435,7 @@ DT::datatype::parseDatatypeType (compilation *compiler)
         }
 
     ifdp parserDebugger << "star cnt: " << starCnt << std::endl;
+    
     parserDatatypeInit (compiler, dt_tok1, dt_tok2, starCnt, expected_type);
 }
 void
@@ -419,7 +456,7 @@ DT::datatype::parse (compilation *compiler)
     }*/
     parseDatatypeType (compiler);
     ifdpm ("in series mod-type-mod, type done \n");
-
+        
     /*ifdp
     {
         parserDebugger<<"_\n";
@@ -430,13 +467,14 @@ DT::datatype::parse (compilation *compiler)
     parseDatatypeModifiers (compiler);
     ifdpm ("in series mod-type-mod, second mod done \n");
 
+
     ifdp
     {
         // parserDebugger<<"_\n";
         // hasDatatypeChanged(this);
         parserDebugger << "Finally the dt: \n";
         print(1);
-    }
+    }        
 }
 
 /*void record::parseExressionable_root()
@@ -445,6 +483,66 @@ DT::datatype::parse (compilation *compiler)
     struct node* result_node = nodePop();
     nodePush(result_node);
 }*/
+
+void record::makeVarAndReg(DT::datatype * dt, Token::token* name, Node::node* valueNode)
+{
+    auto varNode = new Node::node ();
+    varNode->type = Node::var_;
+    varNode->expVarUnion.variable.name = name->stringVal;
+    varNode->expVarUnion.variable.type = dt;
+    varNode->expVarUnion.variable.val = valueNode;
+    
+    // parserScopeOffset
+    if(flags & static_cast<int>(recordFlags::globalScope) )
+    {
+        // scopeOffsetGlobal
+        return ;
+    }
+    if(flags & static_cast<int>(recordFlags::insideStructure) )
+    {
+        //scopeOffsetForStructure
+        int offset = 0 ;
+        parserScope* last = (parserScope*)compiler->scopeLastInstance();
+        if(last)
+        {
+            offset += (last->stackOffset + last->node->expVarUnion.variable.type->size );
+            if(varNode->type != Node::struct_ && varNode->type != Node::union_)
+            {
+                varNode->expVarUnion.variable.padding = padding(offset, 
+                varNode->expVarUnion.variable.type->size);
+            }
+            varNode->expVarUnion.variable.allignedOffset = offset + 
+            varNode->expVarUnion.variable.padding;
+        }
+        return;
+    }
+    // parserScopeOffsetForStack 
+
+    parserScope* last =
+    (parserScope*)compiler->scopeFromTo(compiler->activeScope, compiler->rootScope);
+
+    bool upward = flags & static_cast<int>(recordFlags::upwardStack);
+    int offset = -varNode->varSize();
+    if(upward)
+    {
+        // TODO HANDLE UPWARD
+        std::cout<<"FATAL BUG \n";
+        exit(-1);
+    }
+    if(last)
+    {
+        offset += last->node->extractListOrVarNode()
+        ->expVarUnion.variable.allignedOffset;
+    }
+
+    // parserScopeOffsetForStack end 
+    // parserScopeOffset end
+    auto tmpParserScope = new parserScope(varNode, varNode->expVarUnion.variable.allignedOffset,0);
+    compiler->pushScope(
+        tmpParserScope, varNode->expVarUnion.variable.type->size
+    );
+    varNode->pushInto (compiler->vecNodes);
+}
 
 void
 DT::datatype::parseVar (compilation *compiler, Token::token *name, record *rec)
@@ -464,8 +562,7 @@ DT::datatype::parseVar (compilation *compiler, Token::token *name, record *rec)
             ifdpm("= found, so parsing potential expressions now \n");
             compiler->tokenPtr++;
             rec->ParsePotentialExpressions ();
-            valueNode = Node::popFrom (compiler->vecNodes);
-            ifdp parserDebugger << "NODE POPPED with type: " << valueNode->type << std::endl;
+            valueNode = Node::popFrom (compiler->vecNodes,1);
             /*// parseExpressionable_root
             tok = compiler->tokenAt(++compiler->tokenPtr); // value sotred in tok
             ifdp parserDebugger << "dealing with token: ";
@@ -476,18 +573,24 @@ DT::datatype::parseVar (compilation *compiler, Token::token *name, record *rec)
                 valueNode->val.ullVal = tok->ullVal;
                 compiler->tokenPtr++; // token after value*/
         }
-    auto varNode = new Node::node ();
-    varNode->type = Node::var_;
-    varNode->expVarUnion.variable.name = name->stringVal;
-    varNode->expVarUnion.variable.type = this;
-    varNode->expVarUnion.variable.val = valueNode;
-    // TODO CALC STACK OFFSET
-    ifdp parserDebugger << "VARIABLE NODE INSERTED with val "<< name->stringVal <<"\n";
-    varNode->pushInto (compiler->vecNodes);
+    record* rec2 = new record(compiler, 0);
+    rec2->makeVarAndReg(this, name, valueNode );
+
+
+}
+
+void record::parseSymbol()
+{
+        size_t varSize =0 ; 
+        auto recNew = new record(compiler,static_cast<int> (recordFlags::globalScope));
+        recNew->parseBody(&varSize);
+        //Node::node* bodyNode = Node::popFrom(compiler->vecNodes,1);
+        //bodyNode->pushInto(compiler->vecNodes, true);
 }
 
 void record::parseContentNode( record* rec )
 {
+    ifdp compiler->printTokensFromCurPointer(parserDebugger, 5);
     auto tok = compiler->tokenAt();
     if(tok->type == static_cast<int>(Token::type::KW) )
     {
@@ -504,7 +607,7 @@ void record::parseContentNode( record* rec )
     )
     {
         // parse symbol 
-        compiler->genError("Symols not featured yet \n");
+        parseSymbol();
     }
 
     compiler->skipCharOrError(';');
@@ -564,8 +667,36 @@ void record::appendSizeNode(size_t* varSize, Node::node* n)
 
 }
 
+void record::finalize(
+        Node::node* bodyNode,
+        std::vector<Node::node*>* content,
+        size_t* varSize,  
+        Node::node* largestVarNodeInContent, Node::node* largestPrimitiveNode
+)
+{
+            if(flags & static_cast<int>(recordFlags::insideUnion))
+            if(largestVarNodeInContent) // always true if single body  node has atleast one 
+                *varSize = largestVarNodeInContent->varSize();
+        
+        int padding = computeSumPadding(content);
+        *varSize += padding ;
+
+        if(largestPrimitiveNode)
+        {
+            *varSize = align(*varSize , 
+            largestPrimitiveNode->expVarUnion.variable.type->size );
+        }
+        bool padded = (padding!=0);
+        bodyNode->expVarUnion.body.content = content;
+        bodyNode->expVarUnion.body.padded = padded ;
+        bodyNode->expVarUnion.body.size = *varSize; 
+        bodyNode->expVarUnion.body.largestVarNodeInContent = largestVarNodeInContent;
+
+}
+
 void record::parseBody(size_t* varSize)
 {
+    ifdpm("Parsing body now \n");
     compiler->newScope(0);
     size_t tmp = 0 ;
     if(!varSize)
@@ -576,6 +707,8 @@ void record::parseBody(size_t* varSize)
             && tok->charVal == '{' 
     ))
     {
+       
+    ifdpm("Single line body ");
         // body of single statement 
 
         auto node=  new Node::node();
@@ -586,8 +719,10 @@ void record::parseBody(size_t* varSize)
 
         parseContentNode( clone(flags) ); // this is the only statenent of body
         
-        auto contentNode = Node::popFrom(compiler->vecNodes);
-        contentNode->pushInto(content);
+        auto contentNode = Node::popFrom(compiler->vecNodes,1);
+
+        ifdpm("and pushed into content node \n");
+        contentNode->pushInto(content,1);
 
         // change var size, i believve we should cummulate all statements into varSIze
         // varSize -> bodySize ? 
@@ -602,31 +737,84 @@ void record::parseBody(size_t* varSize)
         Node::node* largestPrimitiveNode = larNode;
         Node::node* largestNode = larNode; 
 
-        if(flags & recordInsideUnion)
-            if(largestNode) // always true if single body  node has atleast one 
-                *varSize = largestNode->varSize();
+        finalize:; // from multiparse
+        finalize( node ,content, varSize, largestNode, largestPrimitiveNode  );
         
-        int padding = computeSumPadding(content);
-        *varSize += padding ;
-
-        if(largestPrimitiveNode)
-        {
-            *varSize = align(*varSize , 
-            largestPrimitiveNode->expVarUnion.variable.type->size );
-        }
-        bool padded = (padding!=0);
-        node->expVarUnion.body.content = content;
-        node->expVarUnion.body.padded = padded ;
-        node->expVarUnion.body.size = *varSize; 
-        node->expVarUnion.body.largestVarNodeInContent = larNode;
-
         compiler->parserActiveBody = node->binded.head;
-        node->pushInto(compiler->vecNodes);
+        node->pushInto(compiler->vecNodes, 1);
         compiler->finishScope();
         return ;
     }
 
+
+    ifdpm("Multi-line body ");
+
+    // multi-statement parse
+    Node::node* bodyNode = new Node::node();
+    bodyNode->type = Node::body_;
+    bodyNode->expVarUnion.body.content = nullptr; 
+    bodyNode->expVarUnion.body.size = 0;
+    bodyNode->expVarUnion.body.padded = false; 
+    bodyNode->expVarUnion.body.largestVarNodeInContent = nullptr;
+
+    Node::node* statement = nullptr; 
+    Node::node* largestPossibleVarNode = nullptr;
+    Node::node* LargestPrimitiveVarNode = nullptr;
+
+    compiler->skipCharOrError('{');
+    Token::token* tmpToken = compiler->tokenAt();
+    
+    while( ! ((tmpToken->type == static_cast<int>(Token::type::Sym) )
+    &&
+    ( tmpToken->charVal == '}' )) )
+    {
+        ifdpm("Begenning to parse a statement now: ");
+        parseContentNode( clone(flags) );
+        auto contentNode = Node::popFrom(compiler->vecNodes,1);
+
+        if(contentNode->type == Node::var_)
+        {
+            if(! largestPossibleVarNode || 
+            ( largestPossibleVarNode->expVarUnion.variable.type->size <= 
+            contentNode->expVarUnion.variable.type->size ) )
+            {
+                largestPossibleVarNode = contentNode;
+            }
+            if( 
+                contentNode->expVarUnion.variable.type->type != static_cast<int>(DT::type::union_) &&
+                 contentNode->expVarUnion.variable.type->type != static_cast<int>(DT::type::struct_) 
+              )
+              {
+                    if(!LargestPrimitiveVarNode || (
+                        LargestPrimitiveVarNode->expVarUnion.variable.type->size
+                        <= contentNode->expVarUnion.variable.type->size
+                    ))
+                    {
+                        LargestPrimitiveVarNode = contentNode;
+                    }
+              }
+        }
+
+        ifdpm("and pushed into content node \n");
+        content->push_back(contentNode);
+        appendSizeNode(varSize, contentNode->extractListOrVarNode());
+        tmpToken = compiler->tokenAt();
+    }
+    ifdpm("Exited from the block doing multi line parsing, the content: \n\n");
+    for(auto n : content[0])
+    {
+        n->printNode(1,true);
+    }
+    compiler->skipCharOrError('}');
+    finalize( bodyNode, content, varSize, largestPossibleVarNode, LargestPrimitiveVarNode );
+
+    compiler->parserActiveBody = bodyNode->binded.head;
+
+    ifdpm("_PUSHING the multiline chunk as a body type node \n");
+    bodyNode->pushInto(compiler->vecNodes);
+
     compiler->finishScope();
+    // TODO function stack size adjustment
     return ;
 
 }
@@ -638,14 +826,20 @@ record::parseDeclaration ()
     ifdpm ("entered parseDeclaration to parse potential VFSU \n");
     auto dt = new DT::datatype ();
     dt->parse (compiler);
+
     // at this point datatype is parsed, now identifier parsing needed , happens at parseVar
     ifdp parserDebugger << "DT parse done, parsing struct/var now ";
 
-    if( dt->type == static_cast<int>(DT::type::struct_) ||
+    if(( dt->type == static_cast<int>(DT::type::struct_) ||
         dt->type == static_cast<int>(DT::type::union_ )   )
-    
-    //parseStructOrUnion
+        //&&( compiler->tokenAt()->type == static_cast<int> (Token::type::Sym)
+      //  && compiler->tokenAt()->charVal == '{'
+      //  ) TODO PLEASE
+    )
     {
+
+
+    //parseStructOrUnion
         if( dt->type == static_cast<int>(DT::type::struct_))
         {
             //parseStruct 
@@ -656,7 +850,56 @@ record::parseDeclaration ()
                 forward = false; 
             if(!forward)
                 compiler->newScope(0);
-            // parse_struct_no_new_scope 
+            
+            //parse_struct_no_new_scope begin
+            Node::node* bodyNode = nullptr ;
+            size_t bodyVarSize = 0 ;
+            record* tmprec = new record(compiler,
+            static_cast<int>(recordFlags::insideStructure) ); 
+            if(!forward)
+            {
+                tmprec->parseBody(&bodyVarSize);
+                ifdpm("retrieving to wrap with a struct Node \n");
+                bodyNode = Node::popFrom(compiler->vecNodes,1);
+            }
+            // make struct node
+                Node::node* structNode = new Node::node();
+                int flags = 0;
+                if(!bodyNode) flags |= static_cast<int> (Node::flags::forwardDeclaration);
+                structNode->type = Node::struct_; 
+                structNode->expVarUnion.structure.bodyNode = bodyNode;
+                structNode->expVarUnion.structure.name = dt->typeStr ; 
+                structNode->flags = flags;
+            if(bodyNode)
+            {
+                dt->size = bodyNode->expVarUnion.body.size;
+            }
+            dt->structNode = structNode;
+            auto tmpToken = compiler->tokenAt();
+            if(tmpToken->type == static_cast<int>(Token::type::ID) )
+            {
+                ifdpm("Also declared a variable within the struct definition \n");
+                structNode->flags |= static_cast<int>( Node::flags::varCombined );
+
+                if(dt->flags & static_cast<int>(DT::flag::STRUCT_UNION_NO_NAME))
+                {
+                    dt->typeStr = tmpToken->stringVal;
+                    dt->unsetFlag(DT::flag::STRUCT_UNION_NO_NAME);
+                    structNode->expVarUnion.structure.name = tmpToken->stringVal;
+                    ifdpm("the nameless struct has an instance which makes it overwritten ");
+                    ifdp parserDebugger << "with "<< tmpToken->stringVal << std::endl;
+                    // overwrite strucutre's given name to this instance name direcly
+                }
+                //make_variable_node_and_register(history_begin(0), dtype, var_name, NULL); 
+                makeVarAndReg(dt, tmpToken, nullptr);
+                structNode->expVarUnion.structure.var = Node::popFrom(compiler->vecNodes);
+            }
+            compiler->tokenPtr++;
+            compiler->skipCharOrError(';');
+            structNode->pushInto(compiler->vecNodes,1);
+            ifdpm("wrap and push complete \n");
+            //parse_struct_no_new_scope end
+
             // actual body parsing now 
             if(!forward)
                 compiler->finishScope();
@@ -668,6 +911,11 @@ record::parseDeclaration ()
         else 
             compiler->genError("FATAL ERROR: should be union/struct \n");
         
+        ifdpm("for SYMRESOLVER \n");
+        Node::node* suNode = Node::popFrom(compiler->vecNodes,1);
+        compiler->symresolverBuildForNode(suNode);
+        suNode->pushInto(compiler->vecNodes,1);
+        ifdpm("for SYMRESOLVER done \n");
     }
 
     // this tok will hold the identifier
@@ -710,16 +958,14 @@ record::parseDeclaration ()
                 {
                     compiler->tokenPtr++;
                     //////dt->parseVar (compiler, tok, this);
-                    singleVarNode = Node::popFrom (compiler->vecNodes);
-                    ifdp parserDebugger << "NODE POPPED with type: " << singleVarNode->type << std::endl;
+                    singleVarNode = Node::popFrom (compiler->vecNodes,1);
                     varListVec->push_back (singleVarNode);
                 }
             while (compiler->tokenAt ()->type == static_cast<int> (Token::type::OP) && tok->charVal == ',');
             auto varListNode = new Node::node ();
             varListNode->type = Node::varlist_;
             varListNode->expVarUnion.VariableList = varListVec;
-            ifdp parserDebugger << "VARLIST NODE INSERTED \n";
-            varListNode->pushInto (compiler->vecNodes);
+            varListNode->pushInto (compiler->vecNodes,1);
         }
 
     ifdpm ("Expecting semicolong now \n");
@@ -740,7 +986,6 @@ record::parseKw (Token::token *tok)
         }
     std::cout << "parsing kw exit1 \n";
 }
-
 
 record *
 record::clone (int flags)
@@ -783,16 +1028,15 @@ record::checkAndMakeExp (Token::token *tok)
         }
     ifdpm ("token pointer moved forward \n");
     compiler->tokenPtr++;
-    Node::popFrom (compiler->vecNodes);
-    ifdp parserDebugger << "NODE POPPED with type "<< left->type<< std::endl;
-    left->flags |= NODE_FLAG_INSIDE_EXPRESSION;
+    Node::popFrom (compiler->vecNodes,1);
+    left->flags |= static_cast<int>(Node::flags::insideExpression);
 
     auto rec1 = this->clone (this->flags);
     rec1->parseExpressionableForOp (op);
     Node::node *right = Node::popFrom (compiler->vecNodes);
     ifdp parserDebugger << "NODE POPPED with type: " << right->type << std::endl;
     if (right)
-        right->flags |= NODE_FLAG_INSIDE_EXPRESSION;
+        right->flags |= static_cast<int>(Node::flags::insideExpression);
     else
         {
             std::cout << "FATAL ERROR \n";
@@ -807,8 +1051,7 @@ record::checkAndMakeExp (Token::token *tok)
     exp->expVarUnion.expression.right = right;
     exp->expVarUnion.expression.op = op;
     exp->reorderExpression ();
-    ifdp parserDebugger << "EXP NODE INSERTED \n";
-    exp->pushInto (compiler->vecNodes);
+    exp->pushInto (compiler->vecNodes,1);
 }
 
 // The node around this operator will be an expression
@@ -835,7 +1078,7 @@ record::makeOneNode ()
     ifdp tok->print (parserDebugger);
 
     // the flag can be used in debugging
-    flags |= NODE_FLAG_INSIDE_EXPRESSION;
+    flags |= static_cast<int>(Node::flags::insideExpression);
     int res = 0;
     Node::node *n;
     switch (tok->type)
@@ -843,17 +1086,17 @@ record::makeOneNode ()
         // token is a number, make a node out of it
         case static_cast<int> (Token::type::Num):
             n = new Node::node ();
-            ifdp parserDebugger << "NUMBER NODE INSERTED with val "<< tok->ullVal <<"\n";
-            n->pushInto (compiler->vecNodes);
-            ifdpm ("number node made and pusehd to vecNodes \n");
             n->type = Node::number_;
+            //ifdp parserDebugger << "NUMBER NODE INSERTED with val "<< tok->ullVal <<"\n";
+            n->pushInto (compiler->vecNodes, 1);
+            ifdpm ("number node made and pusehd to vecNodes \n");
             n->val.ullVal = tok->ullVal;
             ifdpm ("token pointer moved forward 1 position \n");
-            std::cout<<"\n\n-> "<< compiler->tokenPtr << ": "; 
-            compiler->tokenAt()->print();
+           // std::cout<<"\n\n-> "<< compiler->tokenPtr << ": "; 
+            //compiler->tokenAt()->print();
             compiler->tokenPtr = compiler->tokenPtr+1;
-            std::cout<<"-> "<< compiler->tokenPtr << ": "; 
-            compiler->tokenAt()->print();
+            //std::cout<<"-> "<< compiler->tokenPtr << ": "; 
+            //compiler->tokenAt()->print();
             res = 1;
             break;
 
@@ -861,10 +1104,11 @@ record::makeOneNode ()
         case static_cast<int> (Token::type::ID):
             // parse identifier
             n = new Node::node ();
+            n->type = Node::id_;
             ifdp parserDebugger << "ID NODE INSERTED with val "<< tok->stringVal <<"\n";
             n->pushInto (compiler->vecNodes);
             ifdpm ("Identifier node made and pusehd to vecNodes \n");
-            n->type = Node::id_;
+            
             n->val.stringVal = tok->stringVal;
             ifdpm ("token pointer moved 1 position \n");
             compiler->tokenPtr++;
@@ -954,6 +1198,10 @@ parser::parseNextNode ()
 
         case static_cast<int> (Token::type::KW):
             rec->parseGlobalKeyword ();
+            break;
+        
+        case static_cast<int>( Token::type::Sym ):
+            rec->parseSymbol();
             break;
 
         default:
@@ -1058,8 +1306,7 @@ record::parseArraySS ()
             tok = compiler->tokenAt(); 
             ifdp tok->print(parserDebugger);
 
-            auto node = Node::popFrom (compiler->vecNodes);
-            ifdp parserDebugger << "NODE POPPED with type: " << node->type << std::endl;
+            auto node = Node::popFrom (compiler->vecNodes,1);
             auto newNode = new Node::node ();
             newNode->type = Node::bracket_;
             newNode->expVarUnion.staticSize = node;

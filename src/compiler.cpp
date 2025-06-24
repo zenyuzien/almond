@@ -7,8 +7,27 @@
 #include <cstring>
 #include <iostream>
 
+extern int gaper;
 extern std::ofstream parserDebugger;
-
+extern bool PARSER_DEBUG;
+#define gap(level)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+    for (int i = 0; i < level; i++)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+        std::cout << "  ";
+#define gapd(level)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+    for (int i = 0; i < level; i++)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+        parserDebugger << "  ";
+#define ifdp                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
+    if (PARSER_DEBUG)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+        for (int i = 0, lim = (gaper > 15 ? 15 : gaper); i < lim; i++)                                                                                                                                                                                                                                                                                                                                                                                                                                             \
+            parserDebugger << "  ";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+    if (PARSER_DEBUG)
+#define ifdpm(msg)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+    if (PARSER_DEBUG)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+        {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+            for (int i = 0, lim = (gaper > 15 ? 15 : gaper); i < lim; i++)                                                                                                                                                                                                                                                                                                                                                                                                                                         \
+                parserDebugger << "  ";                                                                                                                                                                                                                                                                                                                                                                                                                                                                            \
+            parserDebugger << msg;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+        }
 
 Token::token* compilation::tokenAt()
 {
@@ -50,12 +69,23 @@ struct Token::token* compilation::tokenAt(int token_ptr)
     return tok;
 }
 void
-compilation::skipCharOrError (char c)
+compilation::skipCharOrError (char c, bool debug)
 {
+    ifdp parserDebugger<< "Expecting "<< c ;
     auto tok = tokenAt ();
+    if(!tok)
+    {
+        ifdpm("but got EOF\n");
+        genError ("Char %c is expected, not EOF \n", c );
+
+    }
     tokenPtr++;
     if (!tok || tok->type != static_cast<int> (Token::type::Sym) || tok->charVal != c)
-        genError ("Char %c is expected, %c not allowed \n",tok->charVal, c );
+    {
+
+        ifdp parserDebugger<<  "but got " <<  tok->charVal << std::endl ;
+        genError ("Char %c is expected, %c not allowed \n",c, tok->charVal );
+    }
 }
 void compilation::genError(const char* msg, ...)
 {
@@ -168,6 +198,8 @@ scope* compilation::rootScopeCreateFree(bool create) // 1 create, 0 free
     }
     scope* compilation::newScope(int flags)
     {
+        scopePtr++;
+        ifdp parserDebugger<< "\n--- new scope --- " << scopePtr << " \n";
         auto new_scope = new scope();
         new_scope->flags = flags;
         new_scope->parent = activeScope;
@@ -176,6 +208,8 @@ scope* compilation::rootScopeCreateFree(bool create) // 1 create, 0 free
     }
     void compilation::finishScope()
     {
+        scopePtr--;
+        ifdp parserDebugger<< "\n--- deleted scope --- " << scopePtr << " \n";
          // delete activeScope ; can't do it yet, so we do this instead :
         activeScope = activeScope->parent;
         if(!activeScope) rootScope = nullptr;

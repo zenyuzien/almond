@@ -126,7 +126,7 @@ struct compilation
     void *scopeLastInstance ();
     void printTokensFromCurPointer (std::ofstream &wr, int count=0);
     void printTokensFromCurPointer (int count=0);
-    void skipCharOrError (char c);
+    void skipCharOrError (char c, bool debug= false);
     void symresolverBuildForNode(Node::node* node);
 };
 

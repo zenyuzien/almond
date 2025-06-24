@@ -674,6 +674,14 @@ void record::finalize(
         Node::node* largestVarNodeInContent, Node::node* largestPrimitiveNode
 )
 {
+
+    ifdp parserDebugger << "finalizing with largest node: " ;
+    ifdp largestVarNodeInContent->printNode(gaper,1) ;
+    ifdp parserDebugger << " and largest primitive node: " ;
+    ifdp largestPrimitiveNode->printNode(gaper,1);
+    ifdp parserDebugger << " and size of body without padding: " << *varSize << std::endl;
+
+
             if(flags & static_cast<int>(recordFlags::insideUnion))
             if(largestVarNodeInContent) // always true if single body  node has atleast one 
                 *varSize = largestVarNodeInContent->varSize();
@@ -689,6 +697,7 @@ void record::finalize(
         bool padded = (padding!=0);
         bodyNode->expVarUnion.body.content = content;
         bodyNode->expVarUnion.body.padded = padded ;
+        ifdp parserDebugger<< "After padding: " << *varSize << std::endl;
         bodyNode->expVarUnion.body.size = *varSize; 
         bodyNode->expVarUnion.body.largestVarNodeInContent = largestVarNodeInContent;
 
@@ -778,6 +787,7 @@ void record::parseBody(size_t* varSize)
             ( largestPossibleVarNode->expVarUnion.variable.type->size <= 
             contentNode->expVarUnion.variable.type->size ) )
             {
+                ifdpm("this is the largest possible varNode so far \n");
                 largestPossibleVarNode = contentNode;
             }
             if( 
@@ -790,12 +800,14 @@ void record::parseBody(size_t* varSize)
                         <= contentNode->expVarUnion.variable.type->size
                     ))
                     {
+                        ifdpm("this is the largest primitive varNode so far \n");
                         LargestPrimitiveVarNode = contentNode;
                     }
               }
         }
 
         ifdpm("and pushed into content node \n");
+
         content->push_back(contentNode);
         appendSizeNode(varSize, contentNode->extractListOrVarNode());
         tmpToken = compiler->tokenAt();
@@ -893,8 +905,9 @@ record::parseDeclaration ()
                 //make_variable_node_and_register(history_begin(0), dtype, var_name, NULL); 
                 makeVarAndReg(dt, tmpToken, nullptr);
                 structNode->expVarUnion.structure.var = Node::popFrom(compiler->vecNodes);
+
+                compiler->tokenPtr++;
             }
-            compiler->tokenPtr++;
             compiler->skipCharOrError(';');
             structNode->pushInto(compiler->vecNodes,1);
             ifdpm("wrap and push complete \n");

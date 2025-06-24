@@ -232,6 +232,8 @@ std::string printNodeUtility(Node::node* exp)
             if(exp->expVarUnion.structure.name)
             {
                 tmp += std::string( exp->expVarUnion.structure.name) ; 
+                tmp += " size: "; 
+                tmp += exp->expVarUnion.structure.bodyNode->expVarUnion.body.size;
                 tmp += "\n{\n";
             }
             
@@ -291,38 +293,10 @@ Node::node::printNode (int level, bool isDebug)
 {
     if (isDebug)
         {
-            if (type == exp_)
-                {
-                    gapd(level);
-                    parserDebugger << printNodeUtility(this) << std::endl;
-                }
-            else if (type == number_)
-                {
-                    gapd (level);
-                    parserDebugger << "number val: " << val.ullVal << std::endl;
-                }
-            else if (type == var_)
-                {
-                    gapd (level);
-                    parserDebugger << "var type, flags: " << flags << " union: \n";
-                    gapd (level);
-                    parserDebugger << "var name: " << expVarUnion.variable.name << " val: ";
-
-                    if(expVarUnion.variable.val ->type == Node::exp_)
-                        parserDebugger << printNodeUtility(expVarUnion.variable.val )<< std::endl;
-                    else if(expVarUnion.variable.val->type == Node::number_)
-                        parserDebugger << expVarUnion.variable.val->val.ullVal<< std::endl;
-                }
-            else if(type == struct_)
-            {
-                gapd (level);
-               // parserDebugger << 
-
-            }
+            gapd(level);
+            parserDebugger << printNodeUtility(this) << std::endl;
             return;
         }
-
-    
     gap(level);
     std::cout << printNodeUtility(this) << std::endl;
     return;

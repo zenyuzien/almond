@@ -486,7 +486,7 @@ DT::datatype::parse (compilation *compiler)
 
 void record::makeVarAndReg(DT::datatype * dt, Token::token* name, Node::node* valueNode)
 {
-    auto varNode = new Node::node ();
+    auto varNode = new Node::node (compiler);
     varNode->type = Node::var_;
     varNode->expVarUnion.variable.name = name->stringVal;
     varNode->expVarUnion.variable.type = dt;
@@ -525,9 +525,11 @@ void record::makeVarAndReg(DT::datatype * dt, Token::token* name, Node::node* va
     int offset = -varNode->varSize();
     if(upward)
     {
-        // TODO HANDLE UPWARD
-        std::cout<<"FATAL BUG \n";
-        exit(-1);
+        offset = // functionNodeArgStackAddition
+        compiler->parserActiveFunction->expVarUnion.function.addToBP;
+        if(last)
+            offset = last->node->extractListOrVarNode()
+                    ->expVarUnion.variable.type->dtSize();
     }
     if(last)
     {
@@ -567,7 +569,7 @@ DT::datatype::parseVar (compilation *compiler, Token::token *name, record *rec)
             tok = compiler->tokenAt(++compiler->tokenPtr); // value sotred in tok
             ifdp parserDebugger << "dealing with token: ";
             ifdp tok->print(parserDebugger);
-                auto valueNode = new Node::node();
+                auto valueNode = new Node::node(compiler);
                 valueNode->type = Node::id_;
                 ifdp parserDebugger<<"valueNode/varNode val: "<< tok->ullVal << std::endl;
                 valueNode->val.ullVal = tok->ullVal;
@@ -720,7 +722,7 @@ void record::parseBody(size_t* varSize)
     ifdpm("Single line body ");
         // body of single statement 
 
-        auto node=  new Node::node();
+        auto node=  new Node::node(compiler);
         node->type = Node::body_;
 
         node->binded.head = compiler->parserActiveBody;
@@ -759,7 +761,7 @@ void record::parseBody(size_t* varSize)
     ifdpm("Multi-line body ");
 
     // multi-statement parse
-    Node::node* bodyNode = new Node::node();
+    Node::node* bodyNode = new Node::node(compiler);
     bodyNode->type = Node::body_;
     bodyNode->expVarUnion.body.content = nullptr; 
     bodyNode->expVarUnion.body.size = 0;
@@ -875,7 +877,7 @@ record::parseDeclaration ()
                 bodyNode = Node::popFrom(compiler->vecNodes,1);
             }
             // make struct node
-                Node::node* structNode = new Node::node();
+                Node::node* structNode = new Node::node(compiler);
                 int flags = 0;
                 if(!bodyNode) flags |= static_cast<int> (Node::flags::forwardDeclaration);
                 structNode->type = Node::struct_; 
@@ -932,6 +934,16 @@ record::parseDeclaration ()
     }
 
     // this tok will hold the identifier
+    auto identifier = compiler->tokenAt ();
+    if (!identifier)
+        {
+            ifdpm ("EOF \n");
+            return;
+        }
+
+    dt->parseVar (compiler, identifier, this);
+    ifdpm("After parseVar variable node in vecNodes now \n");
+
     auto tok = compiler->tokenAt ();
     if (!tok)
         {
@@ -939,18 +951,16 @@ record::parseDeclaration ()
             return;
         }
 
-    dt->parseVar (compiler, tok, this);
-    ifdpm("After parseVar variable node in vecNodes now \n");
-
-    tok = compiler->tokenAt ();
-    if (!tok)
-        {
-            ifdpm ("EOF \n");
-            return;
-        }
-
     // int a compltedparseVar
-    // can be a =10 or a[10] or a; simply
+    // can be a =10 or a[10] or a() or a,b or just a 
+
+    if (tok->type == static_cast<int> (Token::type::OP) && !strcmp (tok->stringVal, "("))
+    {
+        parseFunction(dt, identifier);
+        return;
+    }
+
+
     if (tok->type == static_cast<int> (Token::type::OP) && !strcmp (tok->stringVal, "["))
         {
             ifdpm("[ got, so parsing static sizes of the array : ");
@@ -975,7 +985,7 @@ record::parseDeclaration ()
                     varListVec->push_back (singleVarNode);
                 }
             while (compiler->tokenAt ()->type == static_cast<int> (Token::type::OP) && tok->charVal == ',');
-            auto varListNode = new Node::node ();
+            auto varListNode = new Node::node (compiler);
             varListNode->type = Node::varlist_;
             varListNode->expVarUnion.VariableList = varListVec;
             varListNode->pushInto (compiler->vecNodes,1);
@@ -983,6 +993,84 @@ record::parseDeclaration ()
 
     ifdpm ("Expecting semicolong now \n");
     compiler->skipCharOrError(';');
+}
+
+void record::parseIf()
+{
+    // forwarded for goto
+     Node::node* n ;
+     size_t varSize2 = 0;// TODO: check if we can use varSize1 itself
+        
+        // parseIf
+        compiler->tokenPtr++;
+        compiler->skipStringOrError("(");
+
+        // condition now, it must be an expression 
+        ParsePotentialExpressions();
+
+        compiler->skipCharOrError(')');
+        Node::node* condition = Node::popFrom(compiler->vecNodes);
+        size_t varSize1 = 0 ; 
+        parseBody(&varSize1);
+        auto bodyNode = Node::popFrom(compiler->vecNodes);
+
+        //makeIfNode
+        Node::node* ifNode = new Node::node(compiler);
+        ifNode->type = Node::if_ ;
+        ifNode->expVarUnion.generics.if_t.body = bodyNode ; 
+        ifNode->expVarUnion.generics.if_t.cond = condition; 
+                
+        // parseElseOrElseIf
+        n = nullptr; 
+        auto tok = compiler->tokenAt();
+        if((tok->type == static_cast<int>(Token::type::KW))
+        &&
+        ( !strcmp(tok->stringVal, "else") ))
+        {
+            // either else or else if 
+            // but first skip else alone 
+            compiler->tokenPtr++;
+            tok = compiler->tokenAt();
+            if((tok->type == static_cast<int>(Token::type::KW))
+            &&
+            ( !strcmp(tok->stringVal, "if") ))
+            {
+                auto rec = new record(compiler);
+                rec->parseIf();
+                n = Node::popFrom(compiler->vecNodes); 
+            }
+            // its now confirm - else alone
+            // parseElse
+            else 
+            {
+                auto rec = new record(compiler);
+                rec->parseBody(&varSize2);
+                auto bodyNode = Node::popFrom(compiler->vecNodes);
+                auto elseNode = new Node::node(compiler);
+                elseNode->type =  Node::else_ ; 
+                elseNode->expVarUnion.generics.else_t.body = bodyNode;
+            }
+        }
+
+    ifNode->expVarUnion.generics.if_t.next = n;
+    ifNode->pushInto(compiler->vecNodes);
+    return ;
+}
+
+bool record::LoopUtilityForInitCond()
+{
+    auto tok = compiler->tokenAt();
+    if(tok->type == static_cast<int>(Token::type::Sym) 
+        && tok->charVal == ';'
+    )
+    {
+        // we got semicolon directly, which means no node
+        compiler->tokenPtr++;
+        return false; 
+    }
+    ParsePotentialExpressions();
+    compiler->skipCharOrError(';');
+    return true;
 }
 
 // the function is responsble for parsing Keyword
@@ -997,6 +1085,119 @@ record::parseKw (Token::token *tok)
             parseDeclaration ();
             return;
         }
+
+    // TODO: re arrange based on most used keywords
+    if( strcmp( tok->stringVal, "switch" )==0 )
+    {
+        
+    }
+    else if( strcmp( tok->stringVal, "return" )==0 )
+    {
+        //parseReturn
+        compiler->tokenPtr++; 
+        auto tok = compiler->tokenAt();
+        // check if void return 
+        if((tok->type == static_cast<int>(Token::type::Sym) )
+        && (tok->charVal == ';' ))
+        {
+            compiler->tokenPtr++;
+            auto retNode = new Node::node(compiler);
+            retNode->type = Node::return_; 
+            retNode->expVarUnion.generics.return_.returnExp = nullptr;
+            retNode->pushInto(compiler->vecNodes);
+            return ;
+        }
+        ParsePotentialExpressions();
+        auto expNode = Node::popFrom(compiler->vecNodes);
+        auto retNode = new Node::node(compiler);
+        retNode->type = Node::return_; 
+        retNode->expVarUnion.generics.return_.returnExp = expNode;
+        retNode->pushInto(compiler->vecNodes);
+    }
+
+    else if( strcmp( tok->stringVal, "while" )==0 )
+    {
+        //parseWhile
+        compiler->tokenPtr++;
+        compiler->skipStringOrError("(");
+        // TODO: why history new for while but not for "for/if"
+        auto rec = new record(compiler);
+        rec->ParsePotentialExpressions();
+        compiler->skipCharOrError(')');
+        Node::node* whileNode = new Node::node(compiler);
+        whileNode->expVarUnion.generics.while_t.cond 
+            = Node::popFrom(compiler->vecNodes);
+        size_t varSize =0 ; 
+        parseBody(&varSize);
+        whileNode->expVarUnion.generics.while_t.body
+            = Node::popFrom(compiler->vecNodes);
+    }
+
+    else if( strcmp( tok->stringVal, "do" )==0 )
+    {
+        // parseDoWhile
+        compiler->tokenPtr++;
+        size_t varSize =0 ;
+        parseBody(&varSize);
+        auto dowhileNode = new Node::node(compiler);
+        dowhileNode->type = Node::do_while_;
+        dowhileNode->expVarUnion.generics.doWhile_t.body
+            = Node::popFrom(compiler->vecNodes);
+        
+        compiler->skipStringOrError("while");
+        compiler->skipStringOrError("(");
+        auto rec = new record(compiler);
+        rec->ParsePotentialExpressions();
+        compiler->skipCharOrError(')');
+        dowhileNode->expVarUnion.generics.doWhile_t.cond
+            = Node::popFrom(compiler->vecNodes);
+
+        dowhileNode->pushInto(compiler->vecNodes);
+    }
+
+
+
+    else if( strcmp( tok->stringVal, "for" )==0 )
+    {
+        //parseFor
+        auto forNode = new Node::node(compiler);
+        forNode->type = Node::for_ ; 
+        compiler->skipStringOrError("(");
+        
+        forNode->expVarUnion.generics.for_.init =
+            LoopUtilityForInitCond() ?
+            Node::popFrom(compiler->vecNodes) :
+            nullptr ;
+
+        forNode->expVarUnion.generics.for_.cond =
+            LoopUtilityForInitCond() ?
+            Node::popFrom(compiler->vecNodes) :
+            nullptr ;
+
+        auto tok = compiler->tokenAt();
+        if(tok->type == static_cast<int>(Token::type::Sym) 
+            && tok->charVal == ')'
+        )
+            forNode->expVarUnion.generics.for_.update = nullptr;
+        else 
+        {
+            ParsePotentialExpressions();
+            forNode->expVarUnion.generics.for_.update
+            = Node::popFrom(compiler->vecNodes);
+        }
+        compiler->skipCharOrError(')');
+        size_t varSize = 0 ; 
+        parseBody(&varSize);
+        forNode->expVarUnion.generics.for_.body
+            = Node::popFrom(compiler->vecNodes);
+        forNode->pushInto(compiler->vecNodes);
+        
+    }
+
+    else if( strcmp( tok->stringVal, "if" )==0 )
+    {
+        parseIf();
+    }
     std::cout << "parsing kw exit1 \n";
 }
 
@@ -1057,13 +1258,13 @@ record::checkAndMakeExp (Token::token *tok)
         }
     ifdpm ("right node: \n");
     right->printNode (gaper, true);
-    auto exp = new Node::node ();
+    auto exp = new Node::node (compiler);
     exp->type = Node::exp_;
     // exp->expVarUnion.expression
     exp->expVarUnion.expression.left = left;
     exp->expVarUnion.expression.right = right;
     exp->expVarUnion.expression.op = op;
-    exp->reorderExpression ();
+    exp->reorderExpression (compiler);
     exp->pushInto (compiler->vecNodes,1);
 }
 
@@ -1074,8 +1275,68 @@ record::dealWithOp (Token::token *tok)
 {
 
     ifdpm ("Dealing with Op \n");
+
+    if( strcmp(tok->stringVal, "(") ==0 )
+    {
+        //parseForParenthesis
+        compiler->skipStringOrError("(");
+        Node::node* left = nullptr; 
+        Node::node* tmp = nullptr;
+        if(compiler->vecNodes && compiler->vecNodes[0].size()  )
+            tmp = compiler->vecNodes[0].back();
+        if(tmp && 
+            (
+                tmp->type == Node::exp_bracket_ ||
+                tmp->type == Node::exp_ ||
+                tmp->type == Node::id_ ||
+                tmp->type == Node::number_ ||
+                tmp->type == Node::unary_ || 
+                tmp->type == Node::ternary_ ||
+                tmp->type == Node::string_ 
+            )
+        )
+        {
+            left = tmp ;
+            Node::popFrom(compiler->vecNodes);
+        }
+        auto blank = new Node::node(compiler);
+        blank->type == Node::blank_; 
+        Node::node* expNode = blank;
+        auto tok2 = compiler->tokenAt();
+        if(!(
+            tok2->type == static_cast<int>( Token::type::Sym )
+            && 
+            tok2->charVal == ')'
+        ))
+        {
+            auto rectmp = new record(0);
+            rectmp->ParsePotentialExpressions();
+            expNode = Node::popFrom(compiler->vecNodes);
+        }
+        compiler->skipCharOrError(')');
+        auto parNode = new Node::node(compiler); 
+        parNode->expVarUnion.parenthesis = expNode;
+
+        if(left)
+        {
+            auto newExpNode = new Node::node(compiler);
+            newExpNode->expVarUnion.expression.left = left ; 
+            newExpNode->expVarUnion.expression.right = parNode; 
+            newExpNode->expVarUnion.expression.op = "()"; 
+            newExpNode->type == Node::exp_; 
+            newExpNode->pushInto(compiler->vecNodes);
+        }
+
+        //parserDealWithAdditionalExpression
+        if(compiler->tokenAt()->type == static_cast<int>(Token::type::OP))
+        {
+            auto newrec = new record(compiler);
+            newrec->ParsePotentialExpressions();
+        }
+    }
+    else 
     // for binary operations which have left and right operands, we check and make an expression node
-    checkAndMakeExp (tok);
+        checkAndMakeExp (tok);
     return 0;
 }
 static int sucide;
@@ -1098,7 +1359,7 @@ record::makeOneNode ()
         {
         // token is a number, make a node out of it
         case static_cast<int> (Token::type::Num):
-            n = new Node::node ();
+            n = new Node::node (compiler);
             n->type = Node::number_;
             //ifdp parserDebugger << "NUMBER NODE INSERTED with val "<< tok->ullVal <<"\n";
             n->pushInto (compiler->vecNodes, 1);
@@ -1116,7 +1377,7 @@ record::makeOneNode ()
         // identifier- straightforwadly a node
         case static_cast<int> (Token::type::ID):
             // parse identifier
-            n = new Node::node ();
+            n = new Node::node (compiler);
             n->type = Node::id_;
             ifdp parserDebugger << "ID NODE INSERTED with val "<< tok->stringVal <<"\n";
             n->pushInto (compiler->vecNodes);
@@ -1291,6 +1552,106 @@ DT::datatype::array::getTotIndicies (DT::datatype *dt)
     return -1;
 }
 
+void record::parseFunction( DT::datatype* dt, Token::token* name )
+{
+    compiler->newScope(0);
+    // TODO: whatsapp with lecture 80
+    auto funcNode = new Node::node(compiler);
+    // init function node
+    funcNode->expVarUnion.function.returnType = dt; 
+    funcNode->expVarUnion.function.name = name->stringVal; 
+    //funcNode->expVarUnion.function.argsVec = nullptr; 
+    funcNode->expVarUnion.function.bodyNode = nullptr; 
+    funcNode->expVarUnion.function.addToBP = 8; // TODO: CHECK WHY
+    compiler->parserActiveFunction = funcNode;
+    if( 
+        dt->type == static_cast<int> (DT::type::struct_)
+        ||
+        dt->type == static_cast<int> (DT::type::union_)
+    )
+        funcNode->expVarUnion.function.addToBP += 4; // TODO: check why
+    
+    compiler->skipCharOrError('(');
+    
+    // parse func args here
+    std::vector<Node::node*>* argsVec = new std::vector<Node::node*>();  
+    auto rec = new record(compiler,0);
+    compiler->newScope(0);
+    Token::token* tok = compiler->tokenAt();
+    while
+    ( 
+        (tok->type == static_cast<int>( Token::type::Sym ))
+        &&
+        (tok->charVal == ')')
+    )
+    {
+        if(
+            (tok->type == static_cast<int>( Token::type::OP ))
+            &&
+            (tok->stringVal == ".")
+        )
+        {
+            for(int i = 0 ; i < 3 ; i++)
+                compiler->skipStringOrError(".");
+
+            compiler->finishScope();
+            goto end;
+        }
+
+        //parseVarFull
+        auto rec2 = rec->clone( rec->flags |  
+            static_cast<int> (recordFlags::upwardStack) );
+        DT::datatype* dtVar = new DT::datatype(); 
+        dtVar->parse(compiler);
+        Token::token* nameTok = compiler->tokenAt();
+        if( nameTok->type == static_cast<int>(Token::type::ID) )
+            compiler->tokenPtr++;
+        dtVar->parseVar(compiler,nameTok,rec2);
+        auto argNOde = Node::popFrom(compiler->vecNodes);
+        
+        tok = compiler->tokenAt();
+        if(
+            (tok->type == static_cast<int>( Token::type::OP ))
+            &&
+            (tok->stringVal == ",")
+        )
+            compiler->tokenPtr++; 
+        else 
+            break;
+    }
+
+    end:;
+    compiler->skipCharOrError(')');
+    funcNode->expVarUnion.function.argsVec = argsVec;
+    std::string tmp = name->stringVal ;
+    if(
+        compiler->symResolver->getForNF( tmp )
+    )
+    funcNode->flags |= static_cast<int>( functionFlags::isNative );
+    auto peek = compiler->tokenAt();
+
+    if(
+        (peek->type == static_cast<int>( Token::type::Sym ))
+        &&
+        (peek->charVal == '{')
+    )
+    {
+        // parseFunctionBody args: new history only
+
+        /*  instead of pushing, assign.
+            struct node* body_node = node_pop();
+            function_node->func.body_n = body_node;
+        */
+    }
+    else 
+        compiler->skipCharOrError(';');
+    
+    compiler->parserActiveFunction = nullptr; 
+    compiler->finishScope();
+
+    return ;
+}
+
 arrSS *
 record::parseArraySS ()
 {
@@ -1320,7 +1681,7 @@ record::parseArraySS ()
             ifdp tok->print(parserDebugger);
 
             auto node = Node::popFrom (compiler->vecNodes,1);
-            auto newNode = new Node::node ();
+            auto newNode = new Node::node (compiler);
             newNode->type = Node::bracket_;
             newNode->expVarUnion.staticSize = node;
 

@@ -322,7 +322,7 @@ Node::node::printNode (int level, bool isDebug)
 }
 
 void
-Node::node::nodeShiftChildrenLeft ()
+Node::node::nodeShiftChildrenLeft (compilation* compiler)
 {
     // ip num1 * (num2 + num3)
     // op (num1 * num2) + num3
@@ -335,7 +335,7 @@ Node::node::nodeShiftChildrenLeft ()
     Node::node *newLeftchild = expVarUnion.expression.left;
     Node::node *new_rightchild = expVarUnion.expression.right->expVarUnion.expression.left;
 
-    Node::node *newLeftnode = new Node::node ();
+    Node::node *newLeftnode = new Node::node (compiler);
     newLeftnode->type = Node::exp_;
     newLeftnode->expVarUnion.expression.left = newLeftchild;
     newLeftnode->expVarUnion.expression.right = new_rightchild;
@@ -349,7 +349,7 @@ Node::node::nodeShiftChildrenLeft ()
 }
 
 void
-Node::node::reorderExpression (int lev)
+Node::node::reorderExpression (compilation* compiler, int lev)
 {
     gapd (lev);
     ifdpm ("called reorder exp \n");
@@ -381,7 +381,7 @@ Node::node::reorderExpression (int lev)
                 {
                     gapd (lev);
                     ifdpm ("Node Shift required \n");
-                    nodeShiftChildrenLeft ();
+                    nodeShiftChildrenLeft (compiler);
                     gapd (lev);
                     ifdpm ("Node after shift: \n");
                     printNode (gaper + lev, 1);
@@ -389,13 +389,13 @@ Node::node::reorderExpression (int lev)
                         {
                             gapd (lev);
                             ifdpm ("left child also calling reorder exp \n");
-                            expVarUnion.expression.left->reorderExpression (lev + 1);
+                            expVarUnion.expression.left->reorderExpression (compiler, lev + 1);
                         }
                     if (expVarUnion.expression.right)
                         {
                             gapd (lev);
                             ifdpm ("right child also calling reorder exp \n");
-                            expVarUnion.expression.right->reorderExpression (lev + 1);
+                            expVarUnion.expression.right->reorderExpression (compiler, lev + 1);
                         }
                 }
         }

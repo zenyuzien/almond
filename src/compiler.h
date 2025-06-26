@@ -89,7 +89,8 @@ struct compilation
     std::vector<SYM::symbol *> *symTable;
     std::vector<std::vector<SYM::symbol *>* > *symTableTable;
 
-    Node::node* parserActiveBody;
+    Node::node *parserActiveBody,
+               *parserActiveFunction;
 
     SYM::symbolResolver *symResolver;
     int symPtr;
@@ -127,6 +128,7 @@ struct compilation
     void printTokensFromCurPointer (std::ofstream &wr, int count=0);
     void printTokensFromCurPointer (int count=0);
     void skipCharOrError (char c, bool debug= false);
+    void skipStringOrError(const char* s, bool debug = false);
     void symresolverBuildForNode(Node::node* node);
 };
 
@@ -176,6 +178,7 @@ enum class flags
     insideExpression   = 1 ,
     forwardDeclaration = 2 ,
     varCombined        = 4 ,
+
 };
 enum
 {
@@ -192,6 +195,7 @@ enum
     if_,
     else_,
     while_,
+    do_while_,
     for_,
     break_,
     continue_,
@@ -199,6 +203,7 @@ enum
     case_,
     default_,
     goto_,
+
     unary_,
     ternary_,
     label_,
@@ -253,6 +258,71 @@ struct node
 
         } body;
 
+        struct 
+        {
+            int flags; // may come handy in future dev 
+            struct DT::datatype* returnType ; 
+
+            const char* name; // identifier associated 
+
+            // function arguments
+            std::vector<Node::node*>* argsVec ; 
+            size_t addToBP; // how much to add to bp for first arg
+
+            Node::node* bodyNode; // null if prototype
+
+            size_t stackSizeOverall; 
+
+        } function; 
+
+        struct // TODO: can it be an union, or a subset ? 
+        {
+
+            struct 
+            {
+                Node::node *init, *cond, *update, *body ;
+            } for_ ; 
+
+            struct 
+            {
+                Node::node* returnExp;
+            } return_;
+
+            struct 
+            {
+                Node::node *cond, *body, *next; 
+                // next for subsequent if/else ( if any )
+
+            } if_t ;
+
+            struct 
+            {
+                Node::node* body;
+
+            } else_t ;
+
+            struct 
+            {
+                Node::node *cond, *body;
+            } while_t;
+            
+            struct 
+            {
+                Node::node *cond, *body;
+            } doWhile_t;
+
+            struct 
+            {
+                Node::node* switchWhat, 
+                *body; // TODO: check vid
+                std::vector<Node::node*>* cases; 
+
+            } switch_ ;
+
+        } generics; 
+
+        Node::node* parenthesis;
+
     } expVarUnion;
     union
     {
@@ -263,13 +333,23 @@ struct node
         unsigned long long ullVal;
         void *any;
     } val; // val not in peach
-    node () : type (0), flags (0), rowNo (0), colNo (0), path (nullptr)
+
+    // commenting out for now as there is no purpose without binding
+    /*node () : type (0), flags (0), rowNo (0), colNo (0), path (nullptr)
     {
         // binding here required
         // push node ? to where ?
         val.any = nullptr; // safely init union
+        
+    }*/
+    node (compilation* compiler) : type (0), flags (0), rowNo (0), colNo (0), path (nullptr)
+    {
+        // binding here required
+        // push node ? to where ?
+        val.any = nullptr; // safely init union
+        binded.func = compiler->parserActiveFunction;
+        binded.head = compiler->parserActiveBody;
     }
-
     // Destructor
     ~node ()
     {
@@ -281,8 +361,8 @@ struct node
     // implementatios of these can be found in parser.cpp
     void pushInto (std::vector<node *> *v, bool debug = false);
     void printNode (int, bool isdebug = false);
-    void nodeShiftChildrenLeft ();
-    void reorderExpression (int lev = 0);
+    void nodeShiftChildrenLeft (compilation* );
+    void reorderExpression (compilation* compiler, int lev = 0);
 
     size_t varSize();   // for type var_
     size_t varListSize(); // for type varlist_
@@ -295,16 +375,18 @@ node *topOf (std::vector<node *> *v);
 node *popFrom (std::vector<node *> *v, bool debug = false);
 };
 
-
+enum class functionFlags 
+{
+    isNative = 1,
+};
 enum class recordFlags
 {
     insideUnion = 1,
     upwardStack = 2,
     globalScope = 4,
     insideStructure = 8,
-    insideExpression = 16, 
-    forwardDeclaration = 32,
-    varCombined = 64,
+    insideFunctionBody = 16,    
+    Inswitch = 32,
 };
 struct record
 {
@@ -330,11 +412,14 @@ struct record
         size_t* size,  
         Node::node* l1, Node::node* l2
     );
+    void parseIf();
     void parseSymbol();
     // void parseExressionable_root();
     record *clone (int flags);
     arrSS *parseArraySS ();
 
+    bool LoopUtilityForInitCond();
+    void parseFunction( DT::datatype* , Token::token* name );
     void parseBody(size_t* varSize);
     void parseContentNode( record* rec ); // contentNOde is a statement in a body
     void appendSizeNode(size_t*, Node::node*);
@@ -460,5 +545,7 @@ int padding(int val, int to);
 int align(int val, int to);
 int alignPositive(int val, int to);
 int computeSumPadding( std::vector<Node::node*> *list );
+
+
 
 #endif

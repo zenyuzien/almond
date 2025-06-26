@@ -69,6 +69,25 @@ struct Token::token* compilation::tokenAt(int token_ptr)
     return tok;
 }
 void
+compilation::skipStringOrError (const char *str, bool debug)
+{
+    ifdp parserDebugger<< "Expecting "<< str ;
+    auto tok = tokenAt ();
+    if(!tok)
+    {
+        ifdpm(" but got EOF\n");
+        genError ("%s is expected, not EOF \n", str );
+
+    }
+    tokenPtr++;
+    if (!tok || tok->stringVal != str)
+    {
+
+        ifdp parserDebugger<<  " but got " <<  tok->stringVal << std::endl ;
+        genError ("Str %s is expected, %s not allowed \n",str, tok->stringVal );
+    }
+}
+void
 compilation::skipCharOrError (char c, bool debug)
 {
     ifdp parserDebugger<< "Expecting "<< c ;
